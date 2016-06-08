@@ -40,7 +40,7 @@ parts:
 #      - usr/bin
   adapt:
     plugin: python2
-    requirements: parts/adapt/requirements.txt
+    requirements: parts/adapt/src/requirements.txt
     source: https://github.com/MycroftAI/adapt.git
     source-type: git
     source-branch: master
