@@ -3,7 +3,7 @@ version: 0.6.3
 summary:  79 char long summary
 description:  a longer description for the snap
 confinement: devmode # use "strict" to enforce system access only via declared interfaces
-build-packages: [python-dev, python-virtualenv, python-setuptools, python-gobject-dev, virtualenvwrapper, libtool, libffi-dev, libssl-dev, autoconf, bison, swig2.0, libglib2.0-dev, portaudio19-dev, mpg123]
+build-packages: [python-dev, python-virtualenv, python-setuptools, python-gobject-dev, virtualenvwrapper, libtool, libffi-dev, libssl-dev, autoconf, bison, swig2.0, libglib2.0-dev, portaudio19-dev, mpg123, python-psutil]
 parts:
   sphinxbase:
     source: https://github.com/cmusphinx/sphinxbase
@@ -38,9 +38,28 @@ parts:
 #    snap:
 #      - usr/lib/lib*
 #      - usr/bin
+  mimic:
+    plugin: autotools
+    configflags:
+     - --enable-static=no
+     - --prefix=/usr/local/
+     - --with-audio=alsa
+    source: https://github.com/MycroftAI/mimic.git
+    source-type: git
+    build-packages:
+      - gcc
+      - make
+      - pkg-config
+      - libasound2-dev
+    snap:
+      - usr/local/bin
+      - usr/local/include
+      - usr/local/lib
+
+
   mycroft-core:
     plugin: python2
-    requirements: requirements.txt
+    requirements: parts/mycroft-core/src/requirements.txt
     source: git://github.com/MycroftAI/mycroft-core.git
     source-type: git
     source-branch: feature/snapcraft
@@ -70,4 +89,15 @@ parts:
       - usr/share/python/dist_fallback
       - usr/share/python/pyversions.py
       - lib/x86_64-linux-gnu
-   
+      - usr/bin/mycroft-messagebus
+      - usr/bin/mycroft-skills
+      - usr/bin/mycroft-speech-client
+apps:
+  mimic:
+    command: usr/local/bin/mimic
+  mycroft-messagebus:
+    command: usr/bin/mycroft-messagebus
+  mycroft-skils-client:
+    command: usr/bin/mycroft-skills
+  mycroft-speech-client:
+    command: usr/bin/mycroft-speech-client
