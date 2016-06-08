@@ -1,0 +1,8 @@
+# snappy local build dirs
+parts
+stage
+snap
+src
+# snappy build artifacts
+*.snap
+*.tar.bz2
