@@ -65,33 +65,33 @@ parts:
     after:
       - pocketsphinx
     snap:
-#      - etc
-#      - usr
-#      - lib
-#      - usr/lib/python2.7
+      - etc
+      - usr
+      - lib
+      - usr/lib/python2.7
       - usr/lib/python2.7/dist-packages/*
-#      - usr/lib/x86_64-linux-gnu
-#      - usr/bin/python
+      - usr/lib/x86_64-linux-gnu
+      - usr/bin/python
 #      - usr/bin/pip
-#      - usr/bin/python2.7-config
-#      - usr/bin/python-config
-#      - usr/bin/python2.7
-#      - usr/bin/2to3-2.7
-#      - usr/bin/pyversions
-#      - usr/bin/pygettext2.7
-#      - usr/bin/pycompile
-#      - usr/bin/mtrace
-#      - usr/bin/python2-config
-#      - usr/bin/python2
-#      - usr/bin/sotruss
-#      - usr/bin/x86_64-linux-gnu-python2.7-config
-#      - usr/bin/x86_64-linux-gnu-python-config
-#      - usr/bin/pygettext
-#      - usr/bin/gencat
-#      - usr/bin/cautious-launcher
-#      - usr/share/python/dist_fallback
-#      - usr/share/python/pyversions.py
-#      - lib/x86_64-linux-gnu
+      - usr/bin/python2.7-config
+      - usr/bin/python-config
+      - usr/bin/python2.7
+      - usr/bin/2to3-2.7
+      - usr/bin/pyversions
+      - usr/bin/pygettext2.7
+      - usr/bin/pycompile
+      - usr/bin/mtrace
+      - usr/bin/python2-config
+      - usr/bin/python2
+      - usr/bin/sotruss
+      - usr/bin/x86_64-linux-gnu-python2.7-config
+      - usr/bin/x86_64-linux-gnu-python-config
+      - usr/bin/pygettext
+      - usr/bin/gencat
+      - usr/bin/cautious-launcher
+      - usr/share/python/dist_fallback
+      - usr/share/python/pyversions.py
+      - lib/x86_64-linux-gnu
       - usr/bin/mycroft-messagebus
       - usr/bin/mycroft-skills
       - usr/bin/mycroft-speech-client
