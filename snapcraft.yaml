@@ -99,9 +99,9 @@ parts:
 apps:
   mimic:
     command: usr/local/bin/mimic
-  mycroft-messagebus:
+  messagebus:
     command: usr/bin/mycroft-messagebus
-  mycroft-skils-client:
+  skills-client:
     command: usr/bin/mycroft-skills
-  mycroft-speech-client:
+  speech-client:
     command: usr/bin/mycroft-speech-client
