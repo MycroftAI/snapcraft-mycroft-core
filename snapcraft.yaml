@@ -59,17 +59,17 @@ parts:
   mycroft-core:
     plugin: python2
     requirements: parts/mycroft-core/src/requirements.txt
-    source: git://github.com/MycroftAI/mycroft-core.git
+    source: https://github.com/MycroftAI/mycroft-core.git
     source-type: git
     source-branch: feature/snapcraft
     after:
       - pocketsphinx
-#    snap:
+    snap:
 #      - etc
-#       - usr
-#       - lib
+#      - usr
+#      - lib
 #      - usr/lib/python2.7
-#      - usr/lib/python2.7/site-packages/*
+      - usr/lib/python2.7/dist-packages/*
 #      - usr/lib/x86_64-linux-gnu
 #      - usr/bin/python
 #      - usr/bin/pip
@@ -92,9 +92,9 @@ parts:
 #      - usr/share/python/dist_fallback
 #      - usr/share/python/pyversions.py
 #      - lib/x86_64-linux-gnu
-#      - usr/bin/mycroft-messagebus
-#      - usr/bin/mycroft-skills
-#      - usr/bin/mycroft-speech-client
+      - usr/bin/mycroft-messagebus
+      - usr/bin/mycroft-skills
+      - usr/bin/mycroft-speech-client
 
 apps:
   mimic:
