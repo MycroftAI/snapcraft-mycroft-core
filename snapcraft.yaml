@@ -53,6 +53,7 @@ parts:
       - make
       - pkg-config
       - libasound2-dev
+    stage-packages: [libpulse0]
     snap:
       - usr/local/bin
       - usr/local/include
