@@ -17,8 +17,8 @@ parts:
       - swig2.0
     organize:
       usr/share/sphinxbase/swig: usr/swig
-#   stage:
-#     - -usr/lib/python2.7/dist-packages/sphinxbase/*
+#    stage:
+#      - -usr/lib/python2.7/dist-packages/sphinxbase
 #   snap:
 #     - usr/lib/lib*
 #     - usr/lib/python2.7
@@ -45,10 +45,12 @@ parts:
     configflags:
      - --enable-static=no
      - --prefix=/usr/local/
-#     - --with-audio=alsa
+     - --with-audio=pulseaudio
     source: https://github.com/MycroftAI/mimic.git
     source-type: git
     build-packages:
+      - libpulse-dev
+#      - libltdl-dev
       - gcc
       - make
       - pkg-config
