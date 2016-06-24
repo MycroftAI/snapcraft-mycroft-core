@@ -3,7 +3,7 @@ version: 0.6.3
 summary:  79 char long summary
 description:  a longer description for the snap
 confinement: devmode # use "strict" to enforce system access only via declared interfaces
-build-packages: [python-dev, python-virtualenv, python-setuptools, python-gobject-dev, virtualenvwrapper, libtool, libffi-dev, libssl-dev, autoconf, bison, swig2.0, libglib2.0-dev, portaudio19-dev, mpg123, python-psutil]
+build-packages: [python-dev, python-virtualenv, python-setuptools, python-gobject-dev, virtualenvwrapper, libtool, libffi-dev, libssl-dev, autoconf, bison, swig2.0, libglib2.0-dev, portaudio19-dev, mpg123, python-psutil, speech-dispatcher]
 parts:
   sphinxbase:
     source: https://github.com/cmusphinx/sphinxbase
@@ -17,12 +17,13 @@ parts:
       - swig2.0
     organize:
       usr/share/sphinxbase/swig: usr/swig
-#    stage:
-#      - -usr/lib/python2.7/dist-packages/sphinxbase
-#    snap:
-#      - usr/lib/lib*
-#      - usr/lib/python2.7
-#      - usr/bin
+#   stage:
+#     - -usr/lib/python2.7/dist-packages/sphinxbase/*
+#   snap:
+#     - usr/lib/lib*
+#     - usr/lib/python2.7
+#     - usr/bin
+
 
   pocketsphinx:
     source: https://github.com/cmusphinx/pocketsphinx.git
@@ -33,11 +34,11 @@ parts:
       - --with-sphinxbase=$SNAPCRAFT_STAGE/usr
     after:
       - sphinxbase
-#    stage:
-#      - -usr/lib/python2.7/dist-packages/pocketsphinx
-#    snap:
-#      - usr/lib/lib*
-#      - usr/bin
+    stage:
+      - -usr/lib/python2.7/dist-packages/pocketsphinx
+    snap:
+      - usr/lib/lib*
+      - usr/bin
  
   mimic:
     plugin: autotools
@@ -65,55 +66,50 @@ parts:
     source-branch: feature/snapcraft
     after:
       - pocketsphinx
-    snap:
-      - etc
-      - usr
-      - lib
-      - usr/lib/python2.7
-      - usr/lib/python2.7/dist-packages/*
-      - usr/lib/x86_64-linux-gnu
-      - usr/bin/python
+    build-packages: [python-psutil, python-setuptools]
+    stage-packages: [speech-dispatcher]
+#    snap:
+#      - etc
+#      - usr
+#      - lib
+#      - usr/lib/python2.7
+#      - usr/lib/python2.7/dist-packages/*
+#      - usr/lib/x86_64-linux-gnu
+#      - usr/bin/python
 #      - usr/bin/pip
-      - usr/bin/python2.7-config
-      - usr/bin/python-config
-      - usr/bin/python2.7
-      - usr/bin/2to3-2.7
-      - usr/bin/pyversions
-      - usr/bin/pygettext2.7
-      - usr/bin/pycompile
-      - usr/bin/mtrace
-      - usr/bin/python2-config
-      - usr/bin/python2
-      - usr/bin/sotruss
-      - usr/bin/x86_64-linux-gnu-python2.7-config
-      - usr/bin/x86_64-linux-gnu-python-config
-      - usr/bin/pygettext
-      - usr/bin/gencat
-      - usr/bin/cautious-launcher
-      - usr/share/python/dist_fallback
-      - usr/share/python/pyversions.py
-      - lib/x86_64-linux-gnu
-      - usr/bin/mycroft-messagebus
-      - usr/bin/mycroft-skills
-      - usr/bin/mycroft-speech-client
-#  adapt:
-#    plugin: python2
-#    requirements: parts/adapt/src/requirements.txt
-#    source: https://github.com/MycroftAI/adapt.git
-#    source-type: git
-#    source-branch: master
-#    organize:
-#    usr:
-#     - usr/local/
-
-
+#      - usr/bin/python2.7-config
+#      - usr/bin/python-config
+#      - usr/bin/python2.7
+#      - usr/bin/2to3-2.7
+#      - usr/bin/pyversions
+#      - usr/bin/pygettext2.7
+#      - usr/bin/pycompile
+#      - usr/bin/mtrace
+#      - usr/bin/python2-config
+#      - usr/bin/python2
+#      - usr/bin/sotruss
+#      - usr/bin/x86_64-linux-gnu-python2.7-config
+#      - usr/bin/x86_64-linux-gnu-python-config
+#     - usr/bin/pygettext
+#     - usr/bin/gencat
+#     - usr/bin/cautious-launcher
+#     - usr/share/python/dist_fallback
+#     - usr/share/python/pyversions.py
+#     - lib/x86_64-linux-gnu
+#     - usr/bin/mycroft-messagebus
+#     - usr/bin/mycroft-skills
+#     - usr/bin/mycroft-speech-client
+#     - usr/bin/mycroft-cli-client
 
 apps:
   mimic:
     command: usr/local/bin/mimic
+    plugs: [pulseaudio]
   messagebus:
     command: usr/bin/mycroft-messagebus
   skills-client:
     command: usr/bin/mycroft-skills
   speech-client:
     command: usr/bin/mycroft-speech-client
+  cli-client:
+    command: usr/bin/mycroft-cli-client
