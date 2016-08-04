@@ -5,27 +5,26 @@ description:  a longer description for the snap
 confinement: devmode # use "strict" to enforce system access only via declared interfaces
 build-packages: [python-dev, python-virtualenv, python-setuptools, python-gobject-dev, virtualenvwrapper, libtool, libffi-dev, libssl-dev, autoconf, bison, swig2.0, libglib2.0-dev, portaudio19-dev, mpg123, python-psutil, speech-dispatcher]
 parts:
-
-#mimic:
-#  plugin: autotools
-#   configflags:
-#    - --enable-static=no
-#    - --prefix=/usr/local/
-#    - --with-audio=pulseaudio
-#   source: https://github.com/MycroftAI/mimic.git
-#   source-type: git
-#   build-packages:
-#    - libpulse-dev
-#    - libltdl-dev
-#    - gcc
-#    - make
-#    - pkg-config
-#     - libasound2-dev
-#   stage-packages: [libpulse0]
-#    snap:
-#      - usr/local/bin
-#      - usr/local/include
-#      - usr/local/lib
+  mimic:
+    plugin: autotools
+    configflags:
+      - --enable-static=no
+      - --prefix=/usr/local/
+      - --with-audio=pulseaudio
+    source: https://github.com/MycroftAI/mimic.git
+    source-type: git
+    build-packages:
+      - libpulse-dev
+      - libltdl-dev
+      - gcc
+      - make
+      - pkg-config
+      - libasound2-dev
+    stage-packages: [libpulse0]
+    snap:
+      - usr/local/bin
+      - usr/local/include
+      - usr/local/lib
 
   mycroft-core:
     plugin: python2
@@ -34,7 +33,7 @@ parts:
     source-type: git
     source-branch: feature/snapcraft
     build-packages: [python-psutil, python-setuptools]
-    stage-packages: [speech-dispatcher, espeak]
+    stage-packages: [speech-dispatcher]
 #    snap:
 #      - etc
 #      - usr
@@ -69,19 +68,19 @@ parts:
 #      - usr/bin/mycroft-cli-client
 
 apps:
-# mimic:
-#   command: usr/local/bin/mimic
-#   plugs: [pulseaudio]
+  mimic:
+    command: usr/local/bin/mimic
+    plugs: [pulseaudio]
   messagebus:
     plugs: [home, network, network-bind]
     command: usr/bin/mycroft-messagebus
     daemon: simple
   skills-client:
-    plugs: [home, network, network-bind]
+    plugs: [home]
     command: usr/bin/mycroft-skills
     daemon: simple
   speech-client:
-    plugs: [home, network, network-bind]
+    plugs: [home, network, pulseaudio]
     command: usr/bin/mycroft-speech-client
     daemon: simple
   cli-client:
