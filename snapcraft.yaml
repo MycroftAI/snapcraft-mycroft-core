@@ -1,62 +1,27 @@
 name: mycroft-core
-version: 0.6.3
+version: 0.7.13
 summary:  79 char long summary
 description:  a longer description for the snap
 confinement: devmode # use "strict" to enforce system access only via declared interfaces
 build-packages: [python-dev, python-virtualenv, python-setuptools, python-gobject-dev, virtualenvwrapper, libtool, libffi-dev, libssl-dev, autoconf, bison, swig2.0, libglib2.0-dev, portaudio19-dev, mpg123, python-psutil, speech-dispatcher]
 parts:
-  sphinxbase:
-    source: https://github.com/cmusphinx/sphinxbase
-    source-type: git
-    plugin: autotools
-    configflags:
-      - --enable-static=no
-      - --prefix=/usr
-    build-packages:
-      - python-dev
-      - swig2.0
-    organize:
-      usr/share/sphinxbase/swig: usr/swig
-#   stage:
-#      - -usr/lib/python2.7/dist-packages/sphinxbase/*
 
-#   snap:
-#     - usr/lib/lib*
-#     - usr/lib/python2.7
-#     - usr/bin
-
-
-  pocketsphinx:
-    source: https://github.com/cmusphinx/pocketsphinx.git
-    source-type: git
-    plugin: autotools
-    configflags:
-      - --prefix=/usr
-      - --with-sphinxbase=$SNAPCRAFT_STAGE/usr
-    after:
-      - sphinxbase
-    stage:
-      - -usr/lib/python2.7/dist-packages/pocketsphinx
-    snap:
-      - usr/lib/lib*
-      - usr/bin
- 
-  mimic:
-    plugin: autotools
-    configflags:
-     - --enable-static=no
-     - --prefix=/usr/local/
-     - --with-audio=pulseaudio
-    source: https://github.com/MycroftAI/mimic.git
-    source-type: git
-    build-packages:
-      - libpulse-dev
-#      - libltdl-dev
-      - gcc
-      - make
-      - pkg-config
-      - libasound2-dev
-    stage-packages: [libpulse0]
+#mimic:
+#  plugin: autotools
+#   configflags:
+#    - --enable-static=no
+#    - --prefix=/usr/local/
+#    - --with-audio=pulseaudio
+#   source: https://github.com/MycroftAI/mimic.git
+#   source-type: git
+#   build-packages:
+#    - libpulse-dev
+#    - libltdl-dev
+#    - gcc
+#    - make
+#    - pkg-config
+#     - libasound2-dev
+#   stage-packages: [libpulse0]
 #    snap:
 #      - usr/local/bin
 #      - usr/local/include
@@ -68,10 +33,8 @@ parts:
     source: https://github.com/MycroftAI/mycroft-core.git
     source-type: git
     source-branch: feature/snapcraft
-    after:
-      - pocketsphinx
     build-packages: [python-psutil, python-setuptools]
-    stage-packages: [speech-dispatcher]
+    stage-packages: [speech-dispatcher, espeak]
 #    snap:
 #      - etc
 #      - usr
@@ -106,17 +69,20 @@ parts:
 #      - usr/bin/mycroft-cli-client
 
 apps:
-  mimic:
-    command: usr/local/bin/mimic
-    plugs: [pulseaudio]
+# mimic:
+#   command: usr/local/bin/mimic
+#   plugs: [pulseaudio]
   messagebus:
     plugs: [home, network, network-bind]
     command: usr/bin/mycroft-messagebus
+    daemon: simple
   skills-client:
     plugs: [home, network, network-bind]
     command: usr/bin/mycroft-skills
+    daemon: simple
   speech-client:
     plugs: [home, network, network-bind]
     command: usr/bin/mycroft-speech-client
+    daemon: simple
   cli-client:
     command: usr/bin/mycroft-cli-client
