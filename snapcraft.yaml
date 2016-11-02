@@ -28,7 +28,7 @@ parts:
 
   mycroft-core:
     plugin: python2
-    requirements: parts/mycroft-core/src/requirements.txt
+    requirements: requirements.txt
     source: https://github.com/MycroftAI/mycroft-core.git
     source-type: git
     source-branch: feature/snapcraft
