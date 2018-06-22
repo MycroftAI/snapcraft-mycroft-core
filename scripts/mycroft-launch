@@ -87,35 +87,37 @@ export MYCROFT_CACHE="$SNAP_USER_COMMON/.cache/mycroft_web_cache.json"
 export PYTHONPATH="$SNAP/opt/mycroft:$SNAP/lib:$SNAP/usr/lib"
 export GIT_EXEC_PATH="$SNAP/usr/lib/git-core"
 
+export MPG123_MODDIR="$SNAP/usr/lib/mpg123"
+
 if [ ! -d "$SNAP_USER_COMMON/mycroft" ]; then
     mkdir -p "$SNAP_USER_COMMON/mycroft"
-    git clone --progress https://github.com/MycroftAI/mycroft-core.git "$SNAP_USER_COMMON/mycroft" 2>&1 | \
-    yad --progress --pulsate --title="Mycroft" --text="Downloading Mycroft" --width=400 --center --no-buttons --auto-close --on-top --no-escape
-
-    cd "$SNAP_USER_COMMON/mycroft"
-    patch -Np1 < "$SNAP/mycroft-cache.diff"
-else
-    cd "$SNAP_USER_COMMON/mycroft"
 fi
 
-if [ ! -f "$SNAP_USER_COMMON/mycroft/.installed" ]; then
+cd "$SNAP_USER_COMMON/mycroft"
+
+if [ ! -f "$SNAP_USER_COMMON/mycroft/.version" -o "$(cat "$SNAP_USER_COMMON/mycroft/.version")" != "$(cat "$SNAP/mycroft-source/.version")" ]; then
+    ACTION="Installing"
+    [ -f "$SNAP_USER_COMMON/mycroft/.version" ] && ACTION="Updating"
+
+    rsync -rv --exclude .venv --delete "$SNAP/mycroft-source/" "$SNAP_USER_COMMON/mycroft/" | \
+    yad --progress --pulsate --title="Mycroft" --text="$ACTION mycroft" --width=400 --center --no-buttons --auto-close --on-top --no-escape
+    patch -Np1 < "$SNAP/mycroft-cache.diff"
+
     python3 -m venv "$SNAP_USER_COMMON/mycroft/.venv" --without-pip
-    rm -f "$SNAP_USER_COMMON/mycroft/.venv/python3"
-    ln -s "$SNAP/usr/bin/python3" "$SNAP_USER_COMMON/mycroft/.venv/python3"
+    rm -f "$SNAP_USER_COMMON/mycroft/.venv/bin/python3"
+    ln -s "$(dirname "$SNAP")/current/usr/bin/python3" "$SNAP_USER_COMMON/mycroft/.venv/bin/python3"
 
     curl -o $TMPDIR/get-pip.py https://bootstrap.pypa.io/get-pip.py 2>&1 | \
     stdbuf -oL tr '\r' '\n' | \
     sed -u -E 's/^ *([0-9][0-9]*).*( [0-9].*$)/\1\n#Downloading Python PIP(\2)/' | \
     yad --progress --title="Mycroft" --width=400 --center --no-buttons --auto-close --on-top --no-escape
     
-    "$SNAP_USER_COMMON/mycroft/.venv/bin/python" $TMPDIR/get-pip.py | \
+    "$SNAP_USER_COMMON/mycroft/.venv/bin/python3" $TMPDIR/get-pip.py | \
     yad --progress --pulsate --title="Mycroft" --text="Installing Python PIP" --width=400 --center --no-buttons --auto-close --on-top --no-escape
 
     . "$SNAP_USER_COMMON/mycroft/.venv/bin/activate"
 
-    # easy_install pip==9.0.1
-
-    PYTHON=$( python -c "import sys;print('python{}.{}'.format(sys.version_info[0], sys.version_info[1]))" )
+    PYTHON=$( python3 -c "import sys;print('python{}.{}'.format(sys.version_info[0], sys.version_info[1]))" )
 
     # Add mycroft-core to the virtualenv path
     # (This is equivalent to typing 'add2virtualenv $TOP', except
@@ -135,6 +137,7 @@ if [ ! -f "$SNAP_USER_COMMON/mycroft/.installed" ]; then
 
     pip install -r requirements.txt | \
     yad --progress --pulsate --title="Mycroft" --text="Installing Mycroft dependencies" --width=400 --center --no-buttons --auto-close --on-top --no-escape
+    
     md5sum requirements.txt test-requirements.txt dev_setup.sh > .installed
 else
     . "$SNAP_USER_COMMON/mycroft/.venv/bin/activate"
@@ -147,9 +150,26 @@ fi
 if [ ! -f "$SNAP_USER_COMMON/.mycroft/mycroft.conf" ]; then
     cat > "$SNAP_USER_COMMON/.mycroft/mycroft.conf" <<EOF
 {
-    "data_dir": "$SNAP_USER_COMMON/skills"
+    "data_dir": "$SNAP_USER_COMMON/skills",
+    "cache_dir": "$SNAP_USER_COMMON/.cache/mycroft"
 }
 EOF
+fi
+
+if ! grep "data_dir" "$SNAP_USER_COMMON/.mycroft/mycroft.conf"; then
+    sed -i.tmp '1 a\
+'"    \"data_dir\": \"$SNAP_USER_COMMON/skills\","'
+' "$SNAP_USER_COMMON/.mycroft/mycroft.conf"
+fi
+
+if ! grep "cache_dir" "$SNAP_USER_COMMON/.mycroft/mycroft.conf"; then
+    sed -i.tmp '1 a\
+'"    \"cache_dir\": \"$SNAP_USER_COMMON/.cache/mycroft\","'
+' "$SNAP_USER_COMMON/.mycroft/mycroft.conf"
+fi
+
+if [ ! -d "$SNAP_USER_COMMON/.cache/mycroft" ]; then
+    mkdir -p "$SNAP_USER_COMMON/.cache/mycroft"
 fi
 
 if [ "$1" = "start-all" -o "$2" = "start-all" ]; then

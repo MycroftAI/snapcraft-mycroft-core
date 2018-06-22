@@ -1,5 +1,7 @@
 name: mycroft
-version: '0.1'
+version: latest
+version-script: |
+  cat $SNAPCRAFT_STAGE/mycroft-source/.version | sed -e 's|release/v||'
 icon: snap/gui/mycroft.png
 summary: Your AI personal assistant!
 description: >
@@ -115,14 +117,13 @@ parts:
     stage-packages:
     - libpulse0
 
-  mycroft:
+  mycroft-deps:
     after:
     - alsa
     - mimic
     - mpg123
     - patches
     - portaudio
-    - scripts
     plugin: nil
     stage-packages:
     - libgdk-pixbuf2.0-0 # yad
@@ -148,6 +149,7 @@ parts:
     - libjpeg-dev
     - libpcre3
     - libssl-dev
+    - libvlc-dev
     - locales-all
     - pulseaudio-utils
     - python-gobject-2-dev
@@ -156,6 +158,20 @@ parts:
     - rsync
     - swig
     - zlib1g
+
+  mycroft:
+    source: https://github.com/MycroftAI/mycroft-core.git
+    plugin: dump
+    override-pull: |
+      snapcraftctl pull
+      git checkout $(git describe --tags --abbrev=0 --match release/v*)
+      git describe --tags > .version
+    organize:
+      '*': mycroft-source/
+      '.*.yml': mycroft-source/
+      '.coveralls': mycroft-source/.coveralls
+      '.version': mycroft-source/.version
+      '.git*': mycroft-source/
 
 apps:
   mycroft:
