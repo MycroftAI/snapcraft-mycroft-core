@@ -140,6 +140,10 @@ else
     . "$SNAP_USER_COMMON/mycroft/.venv/bin/activate"
 fi
 
+if [ ! -d "$SNAP_USER_COMMON/.mycroft" ]; then
+    mkdir -p "$SNAP_USER_COMMON/.mycroft"
+fi
+
 if [ ! -f "$SNAP_USER_COMMON/.mycroft/mycroft.conf" ]; then
     cat > "$SNAP_USER_COMMON/.mycroft/mycroft.conf" <<EOF
 {
