@@ -1,0 +1,22 @@
+diff --git a/mycroft/configuration/config.py b/mycroft/configuration/config.py
+index 72edccc..fbd0bda 100644
+--- a/mycroft/configuration/config.py
++++ b/mycroft/configuration/config.py
+@@ -17,6 +17,7 @@
+ import re
+ import json
+ import inflection
++from os import environ
+ from os.path import exists, isfile, join, dirname, expanduser
+ from requests import RequestException
+ 
+@@ -149,6 +150,9 @@ class RemoteConf(LocalConf):
+     def __init__(self, cache=None):
+         super(RemoteConf, self).__init__(None)
+ 
++        if environ['MYCROFT_CACHE']:
++            cache = environ['MYCROFT_CACHE']
++
+         cache = cache or '/var/tmp/mycroft_web_cache.json'
+         from mycroft.api import is_paired
+         if not is_paired():

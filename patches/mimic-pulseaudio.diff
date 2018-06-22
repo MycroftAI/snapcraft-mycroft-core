@@ -1,0 +1,28 @@
+diff --git a/configure.ac b/configure.ac
+index bebcd5d..7e86584 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -130,8 +130,12 @@ PKG_CHECK_MODULES([PULSEAUDIO], [libpulse],
+                   [AUDIODRIVER="pulseaudio"
+                    AUDIODETECTED_PULSEAUDIO="true"],
+                   [m4_ignore])
+-AUDIODEFS_PULSEAUDIO="-DCST_AUDIO_PULSEAUDIO ${PULSEAUDIO_CFLAGS}"
+-AUDIOLIBS_PULSEAUDIO="${PULSEAUDIO_LIBS}"
++PKG_CHECK_MODULES([PULSEAUDIO_SIMPLE], [libpulse-simple],
++                  [AUDIODRIVER="pulseaudio"
++                   AUDIODETECTED_PULSEAUDIO="true"],
++                  [m4_ignore])
++AUDIODEFS_PULSEAUDIO="-DCST_AUDIO_PULSEAUDIO ${PULSEAUDIO_CFLAGS} ${PULSEAUDIO_SIMPLE_CFLAGS}"
++AUDIOLIBS_PULSEAUDIO="${PULSEAUDIO_LIBS} ${PULSEAUDIO_SIMPLE_LIBS}"
+ 
+ dnl Check PortAudio is at least (v19-dev)
+ AUDIODETECTED_PORTAUDIO="false"
+@@ -186,7 +190,7 @@ AS_CASE( [ ${AUDIODRIVER} ],
+            [ AUDIODEFS="${AUDIODEFS_PULSEAUDIO}"
+              AUDIOLIBS="${AUDIOLIBS_PULSEAUDIO}"
+              AUDIODETECTED="${AUDIODETECTED_PULSEAUDIO}"
+-             PKGCONFIG_MIMIC_DEPS="${PKGCONFIG_MIMIC_DEPS} libpulse"
++             PKGCONFIG_MIMIC_DEPS="${PKGCONFIG_MIMIC_DEPS} libpulse libpulse-simple"
+            ],
+          [ portaudio ],
+            [ AUDIODEFS="${AUDIODEFS_PORTAUDIO}"

@@ -1,15 +1,218 @@
-name: my-snap-name # you probably want to 'snapcraft register <name>'
-version: '0.1' # just for humans, typically '1.2+git' or '1.3.2'
-summary: Single-line elevator pitch for your amazing snap # 79 char long summary
-description: |
-  This is my-snap's description. You have a paragraph or two to tell the
-  most important story about your snap. Keep it under 100 words though,
-  we live in tweetspace and your description wants to look good in the snap
-  store.
+name: mycroft
+version: '0.1'
+icon: snap/gui/mycroft.png
+summary: Your AI personal assistant!
+description: >
+  Mycroft is a free and open-source intelligent personal assistant and knowledge
+  navigator for Linux-based operating systems that uses a natural language user
+  interface. It is the world’s first fully open-source AI voice assistant.
 
-confinement: devmode # use 'strict' once you have the right plugs and slots
+  Mycroft is named after a fictional computer from 1966 science fiction novel
+  "The Moon Is a Harsh Mistress".
+
+grade: stable
+confinement: strict
 
 parts:
-  my-part:
-    # See 'snapcraft plugins'
+  alsa:
+    after: [alsa-lib, alsa-plugins]
+  alsa-lib:
+    # configflags needed until LP#1766878 is fixed
+    configflags:
+    - --prefix=/usr
+    - --sysconfdir=/etc
+    - --libexec=/usr/lib
+    - --libdir=/usr/lib
+    - --localstatedir=/var
+    - --with-configdir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/alsa
+    - --with-plugindir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/alsa-lib
+    - --disable-alisp
+    - --disable-aload
+    - --disable-python
+    - --disable-rawmidi
+    - --disable-static
+    - --disable-topology
+    - --disable-ucm
+    - --enable-symbolic-functions
+    prime: ['*']
+  alsa-plugins:
+    after: [alsa-lib]
+    # configflags needed until LP#1766878 is fixed
+    configflags:
+    - --prefix=/usr
+    - --sysconfdir=/etc
+    - --libexec=/usr/lib
+    - --libdir=/usr/lib
+    - --localstatedir=/var
+    - --disable-arcamav
+    - --disable-avcodec
+    - --disable-jack
+    - --disable-mix
+    - --disable-oss
+    - --disable-usbstream
+    - --with-plugindir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/alsa-lib
+    - --disable-static
+    - LDFLAGS=-L$SNAPCRAFT_STAGE/usr/lib
+    prime: ['*']
+
+  patches:
+    source: patches
+    plugin: dump
+    prime: [mycroft-cache.diff]
+
+  scripts:
+    source: scripts
+    source-type: local
+    plugin: dump
+    override-pull: |
+      snapcraftctl pull
+      chmod +x mycroft-launch
+    organize:
+      mycroft-launch: bin/mycroft-launch
+
+  mimic:
+    after: [patches]
+    plugin: autotools
+    source: https://github.com/MycroftAI/mimic.git
+    source-depth: 1
+    configflags:
+    - --prefix=/usr
+    - --disable-static
+    - --with-audio=pulseaudio
+    override-pull: |
+      snapcraftctl pull
+      patch -Np1 < $SNAPCRAFT_STAGE/mimic-pulseaudio.diff
+    build-packages:
+    - libpcre2-dev
+    - libpulse-dev
+    stage-packages:
+    - libpcre2-8-0
+    - libpulse0
+
+  portaudio:
+    after: [alsa]
+    source: http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz
+    plugin: cmake
+    configflags:
+    - -DCMAKE_INSTALL_PREFIX=/usr
+    - -DPA_USE_ALSA=ON
+    - -DPA_USE_JACK=ON
+    build-packages:
+    - libjack-dev
+    stage-packages:
+    - libjack0
+
+  mpg123:
+    after: [alsa]
+    source: http://sourceforge.mirrorservice.org/m/mp/mpg123/mpg123/1.25.10/mpg123-1.25.10.tar.bz2
+    plugin: autotools
+    configflags:
+    - --prefix=/usr
+    - --disable-static
+    - --with-default-audio=pulse
+    build-packages:
+    - libpulse-dev
+    stage-packages:
+    - libpulse0
+
+  mycroft:
+    after:
+    - alsa
+    - mimic
+    - mpg123
+    - patches
+    - portaudio
+    - scripts
     plugin: nil
+    stage-packages:
+    - libgdk-pixbuf2.0-0 # yad
+    - libgtk-3-0         # yad
+    - libfreetype6       # yad
+    - libfontconfig1     # yad
+    - libnotify4         # yad
+    - libnotify-bin
+    - yad
+    - bison
+    - build-essential
+    - coreutils
+    - curl
+    - flac
+    - git
+    - jq
+    - libc6
+    - libfann-dev
+    - libffi-dev
+    - libgcc1
+    - libglib2.0-dev
+    - libicu-dev
+    - libjpeg-dev
+    - libpcre3
+    - libssl-dev
+    - locales-all
+    - pulseaudio-utils
+    - python-gobject-2-dev
+    - python-setuptools
+    - python3-dev
+    - rsync
+    - swig
+    - zlib1g
+
+apps:
+  mycroft:
+    command: alsa-launch mycroft-launch start-all
+    plugs:
+    - desktop
+    - desktop-legacy
+    - network
+    - network-bind
+    - pulseaudio
+    - x11
+    - wayland
+
+  cli:
+    command: mycroft-launch python3 "$SNAP_USER_COMMON/mycroft/mycroft/client/text/main.py"
+    plugs:
+    - desktop
+    - desktop-legacy
+    - network
+    - x11
+    - wayland
+
+  bus:
+    command: mycroft-launch python3 "$SNAP_USER_COMMON/mycroft/mycroft/messagebus/service/main.py"
+    plugs:
+    - desktop
+    - desktop-legacy
+    - network
+    - network-bind
+    - x11
+    - wayland
+
+  skills:
+    command: mycroft-launch python3 "$SNAP_USER_COMMON/mycroft/mycroft/skills/main.py"
+    plugs:
+    - desktop
+    - desktop-legacy
+    - network
+    - x11
+    - wayland
+
+  audio:
+    command: alsa-launch mycroft-launch python3 "$SNAP_USER_COMMON/mycroft/mycroft/audio/main.py"
+    plugs:
+    - desktop
+    - desktop-legacy
+    - network
+    - pulseaudio
+    - x11
+    - wayland
+
+  voice:
+    command: alsa-launch mycroft-launch python3 "$SNAP_USER_COMMON/mycroft/mycroft/client/speech/main.py"
+    plugs:
+    - desktop
+    - desktop-legacy
+    - network
+    - pulseaudio
+    - x11
+    - wayland

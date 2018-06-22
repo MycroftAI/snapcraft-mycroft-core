@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=Mycroft
+Comment=Mycroft: your AI personal assistant
+Exec=mycroft
+Icon=${SNAP}/meta/gui/mycroft.png
+Categories=Utilities;
+Terminal=false
+StartupNotify=false
+Keywords=ai;assistant
