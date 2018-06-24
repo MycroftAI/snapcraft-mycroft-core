@@ -88,6 +88,7 @@ export PYTHONPATH="$SNAP/opt/mycroft:$SNAP/lib:$SNAP/usr/lib"
 export GIT_EXEC_PATH="$SNAP/usr/lib/git-core"
 
 export MPG123_MODDIR="$SNAP/usr/lib/mpg123"
+export VLC_PLUGIN_PATH="$SNAP/usr/lib"
 
 if [ ! -d "$SNAP_USER_COMMON/mycroft" ]; then
     mkdir -p "$SNAP_USER_COMMON/mycroft"
@@ -151,7 +152,7 @@ if [ ! -f "$SNAP_USER_COMMON/.mycroft/mycroft.conf" ]; then
     cat > "$SNAP_USER_COMMON/.mycroft/mycroft.conf" <<EOF
 {
     "data_dir": "$SNAP_USER_COMMON/skills",
-    "cache_dir": "$SNAP_USER_COMMON/.cache/mycroft"
+    "cache_path": "$SNAP_USER_COMMON/.cache/mycroft"
 }
 EOF
 fi
@@ -162,10 +163,11 @@ if ! grep "data_dir" "$SNAP_USER_COMMON/.mycroft/mycroft.conf"; then
 ' "$SNAP_USER_COMMON/.mycroft/mycroft.conf"
 fi
 
-if ! grep "cache_dir" "$SNAP_USER_COMMON/.mycroft/mycroft.conf"; then
+if ! grep "cache_path" "$SNAP_USER_COMMON/.mycroft/mycroft.conf"; then
     sed -i.tmp '1 a\
-'"    \"cache_dir\": \"$SNAP_USER_COMMON/.cache/mycroft\","'
+'"    \"cache_path\": \"$SNAP_USER_COMMON/.cache/mycroft\","'
 ' "$SNAP_USER_COMMON/.mycroft/mycroft.conf"
+    sed -i.tmp '/"cache_dir"/d' "$SNAP_USER_COMMON/.mycroft/mycroft.conf"
 fi
 
 if [ ! -d "$SNAP_USER_COMMON/.cache/mycroft" ]; then

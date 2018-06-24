@@ -117,6 +117,185 @@ parts:
     stage-packages:
     - libpulse0
 
+  vlc:
+    after: [alsa, mpg123, portaudio]
+    source: https://download.videolan.org/pub/videolan/vlc/3.0.3/vlc-3.0.3.tar.xz
+    source-checksum: sha256/9ba8b04bdb13f7860a2041768ac83b47b397a36549c71c530b94028a3cfd5b51
+    plugin: autotools
+    override-pull: |
+      snapcraftctl pull
+      sed -i 's|0\.19\.8|0\.19\.7|'  configure.ac
+    override-build: |
+      cd extras/tools
+      ./bootstrap
+      make -j$SNAPCRAFT_PARALLEL_BUILD_COUNT .protoc
+      # make -j$SNAPCRAFT_PARALLEL_BUILD_COUNT .nasm
+      cd ../../
+      export PATH=$PWD/extras/tools/build/bin:$PATH
+      cd contrib && mkdir linux && cd linux
+      ../bootstrap \
+        --disable-a52 \
+        --disable-chromaprint \
+        --disable-dca \
+        --disable-disc \
+        --disable-ebml \
+        --disable-fluid \
+        --disable-fontconfig \
+        --disable-freetype2 \
+        --disable-gettext \
+        --disable-glib \
+        --disable-gnutls \
+        --disable-gpg-error \
+        --disable-jack \
+        --disable-jpeg \
+        --disable-libdsm \
+        --disable-libxml2 \
+        --disable-lua \
+        --disable-matroska \
+        --disable-mfx \
+        --disable-modplug \
+        --disable-mpcdec \
+        --disable-mpg123 \
+        --disable-mysofa \
+        --disable-ncurses \
+        --disable-png \
+        --disable-qt \
+        --disable-qt \
+        --disable-srt \
+        --disable-tiff \
+        --disable-tiger \
+        --disable-tremor \
+        --disable-upnp \
+        --disable-vncclient \
+        --disable-xcb \
+        --disable-xcb-proto \
+        --disable-xorg-macros \
+        --disable-xproto \
+        --disable-zlib \
+        --disable-zvbi
+      make -j$SNAPCRAFT_PARALLEL_BUILD_COUNT fetch
+      make -j$SNAPCRAFT_PARALLEL_BUILD_COUNT
+      make install
+      cd ../../
+      ./configure \
+        --prefix=$SNAPCRAFT_PART_INSTALL/usr \
+        --enable-merge-ffmpeg \
+        --disable-a52
+      make -j$SNAPCRAFT_PARALLEL_BUILD_COUNT
+      make install
+    build-packages:
+    - ant
+    - autoconf
+    - automake
+    - bison
+    - build-essential
+    - cmake
+    - curl
+    - flex
+    - g++
+    - gettext
+    - git
+    - libavahi-client-dev
+    - libcdio-dev
+    - libdbus-1-dev
+    - libdirectfb-dev
+    - libebml-dev
+    - libfreerdp-dev
+    - libfreetype6-dev
+    - libfribidi-dev
+    - libglib2.0-dev
+    - libgnutls28-dev
+    - libidn11-dev
+    - libjpeg8-dev
+    - libjack-dev
+    - liblircclient-dev
+    - liblua5.2-dev
+    - libmatroska-dev
+    - libmtp-dev
+    - libncursesw5-dev
+    - libpng-dev
+    - libpulse-dev
+    - librsvg2-dev
+    - libsecret-1-dev
+    - libtool
+    - libtool-bin
+    - libudev-dev
+    - libupnp-dev
+    - libv4l-dev
+    - libva-dev
+    - libvdpau-dev
+    - libwayland-dev
+    - libx11-dev
+    - libxcb-composite0-dev
+    - libxcb-keysyms1-dev
+    - libxcb-randr0-dev
+    - libxcb-shm0-dev
+    - libxcb-xfixes0-dev
+    - libxcb-xv0-dev
+    - libxcb1-dev
+    - libxext-dev
+    - libxi-dev
+    - libxinerama-dev
+    - libxkbcommon-x11-dev
+    - libxml2-dev
+    - libxpm-dev
+    - libzvbi-dev
+    - lua5.2
+    - make
+    - pkg-config
+    - ragel
+    - wayland-protocols
+    - xz-utils
+    - yasm
+    - zlib1g-dev
+    stage-packages:
+    - breeze-icon-theme
+    - dbus-x11
+    - fonts-freefont-ttf
+    - frameworkintegration
+    - i965-va-driver
+    - libebml4v5
+    - libfreerdp-client1.1
+    - libfreerdp-core1.1
+    - libfreerdp-gdi1.1
+    - libfreetype6
+    - libfribidi0
+    - libgcc1
+    - libglib2.0-0
+    - libjack0
+    - libjpeg8
+    - liblua5.2-0
+    - libmatroska6v5
+    - libmtp9
+    - libnotify4
+    - libpulse0
+    - librsvg2-2
+    - libschroedinger-1.0-0
+    - libsecret-1-0
+    - libupnp6
+    - libva-drm1
+    - libva-x11-1
+    - libva1
+    - libvdpau1
+    - libwayland-client0
+    - libx11-6
+    - libxcb-composite0
+    - libxcb-keysyms1
+    - libxcb-randr0
+    - libxcb-shm0
+    - libxcb-xv0
+    - libxcb1
+    - libxext6
+    - libxi6
+    - libxinerama1
+    - libxkbcommon-x11-0
+    - libxpm4
+    - libzvbi0
+    - mesa-utils
+    - mesa-vdpau-drivers
+    - vdpau-va-driver
+    - zlib1g
+
   mycroft-deps:
     after:
     - alsa
@@ -124,6 +303,7 @@ parts:
     - mpg123
     - patches
     - portaudio
+    - vlc
     plugin: nil
     stage-packages:
     - libgdk-pixbuf2.0-0 # yad
@@ -149,7 +329,6 @@ parts:
     - libjpeg-dev
     - libpcre3
     - libssl-dev
-    - libvlc-dev
     - locales-all
     - pulseaudio-utils
     - python-gobject-2-dev
