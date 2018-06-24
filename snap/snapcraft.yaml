@@ -253,7 +253,6 @@ parts:
     - dbus-x11
     - fonts-freefont-ttf
     - frameworkintegration
-    - i965-va-driver
     - libebml4v5
     - libfreerdp-client1.1
     - libfreerdp-core1.1
