@@ -12,6 +12,9 @@ description: >
   Mycroft is named after a fictional computer from 1966 science fiction novel
   "The Moon Is a Harsh Mistress".
 
+  Installing skills by voice seems to be broken for now, but you can use
+  the `mycroft.msm` command to list, install, and remove skills.
+
 grade: stable
 confinement: strict
 
@@ -60,7 +63,9 @@ parts:
   patches:
     source: patches
     plugin: dump
-    prime: [mycroft-cache.diff]
+    prime:
+    - msm-skillsdir.diff
+    - mycroft-cache.diff
 
   scripts:
     source: scripts
@@ -159,7 +164,6 @@ parts:
         --disable-mysofa \
         --disable-ncurses \
         --disable-png \
-        --disable-qt \
         --disable-qt \
         --disable-srt \
         --disable-tiff \
@@ -354,6 +358,17 @@ parts:
 apps:
   mycroft:
     command: alsa-launch mycroft-launch start-all
+    plugs:
+    - desktop
+    - desktop-legacy
+    - network
+    - network-bind
+    - pulseaudio
+    - x11
+    - wayland
+
+  msm:
+    command: mycroft-launch python3 "$SNAP_USER_COMMON/mycroft/.venv/bin/msm"
     plugs:
     - desktop
     - desktop-legacy

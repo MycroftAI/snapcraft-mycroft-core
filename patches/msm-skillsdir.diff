@@ -1,0 +1,47 @@
+--- a/lib/python3.5/site-packages/msm/mycroft_skills_manager.py	2018-07-10 18:05:09.126435756 +0100
++++ b/lib/python3.5/site-packages/msm/mycroft_skills_manager.py	2018-07-10 19:00:12.275524635 +0100
+@@ -23,6 +23,7 @@
+ from glob import glob
+ from itertools import chain
+ from multiprocessing.pool import ThreadPool
++from os import environ
+ from os.path import expanduser, join, dirname, isdir
+ 
+ from typing import Dict, List
+@@ -42,8 +43,13 @@
+     def __init__(self, platform='default', skills_dir=None, repo=None,
+                  versioned=True):
+         self.platform = platform
+-        self.skills_dir = expanduser(skills_dir or '') \
+-                          or self.DEFAULT_SKILLS_DIR
++
++        if environ.get('MYCROFT_SKILLS') is not None:
++            self.skills_dir = environ['MYCROFT_SKILLS']
++        else:
++            self.skills_dir = expanduser(skills_dir or '') \
++                              or self.DEFAULT_SKILLS_DIR
++
+         self.repo = repo or SkillRepo()
+         self.versioned = versioned
+ 
+--- a/lib64/python3.5/site-packages/msm/skill_repo.py	2018-07-10 19:26:50.774291041 +0100
++++ b/lib64/python3.5/site-packages/msm/skill_repo.py	2018-07-10 19:26:14.933507937 +0100
+@@ -20,7 +20,7 @@
+ # specific language governing permissions and limitations
+ # under the License.
+ from glob import glob
+-from os import makedirs
++from os import environ, makedirs
+ from os.path import exists, join, isdir, dirname, basename
+ 
+ from git import Repo
+@@ -33,6 +33,9 @@
+ 
+ class SkillRepo(object):
+     def __init__(self, path=None, url=None, branch=None):
++        if environ.get('MYCROFT_SKILLS_REPO') is not None:
++            path = environ['MYCROFT_SKILLS_REPO']
++
+         self.path = path or "/opt/mycroft/.skills-repo"
+         self.url = url or "https://github.com/MycroftAI/mycroft-skills"
+         self.branch = branch or "18.02"

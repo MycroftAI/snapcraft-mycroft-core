@@ -10,13 +10,11 @@ index 72edccc..fbd0bda 100644
  from os.path import exists, isfile, join, dirname, expanduser
  from requests import RequestException
  
-@@ -149,6 +150,9 @@ class RemoteConf(LocalConf):
+@@ -149,6 +150,7 @@ class RemoteConf(LocalConf):
      def __init__(self, cache=None):
          super(RemoteConf, self).__init__(None)
  
-+        if environ['MYCROFT_CACHE']:
-+            cache = environ['MYCROFT_CACHE']
-+
++        cache = environ.get('MYCROFT_CACHE')
          cache = cache or '/var/tmp/mycroft_web_cache.json'
          from mycroft.api import is_paired
          if not is_paired():
