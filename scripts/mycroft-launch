@@ -104,7 +104,7 @@ if [ ! -f "$SNAP_USER_COMMON/mycroft/.version" -o "$(cat "$SNAP_USER_COMMON/mycr
 
     rsync -rv --exclude .venv --delete "$SNAP/mycroft-source/" "$SNAP_USER_COMMON/mycroft/" | \
     yad --progress --pulsate --title="Mycroft" --text="$ACTION mycroft" --width=400 --center --no-buttons --auto-close --on-top --no-escape
-    if ! patch -Np1 --dry-run -i "$SNAP/mycroft-cache.diff" 2>&1 > /dev/null; then
+    if patch -Np1 --dry-run -i "$SNAP/mycroft-cache.diff" 2>&1 > /dev/null; then
         patch -Np1 -i "$SNAP/mycroft-cache.diff"
     fi
 
@@ -145,7 +145,7 @@ if [ ! -f "$SNAP_USER_COMMON/mycroft/.version" -o "$(cat "$SNAP_USER_COMMON/mycr
     yad --progress --pulsate --title="Mycroft" --text="Installing Mycroft dependencies" --width=400 --center --no-buttons --auto-close --on-top --no-escape
     
     cd "$SNAP_USER_COMMON/mycroft/.venv"
-    if ! patch -Np1 --dry-run -i "$SNAP/msm-skillsdir.diff" 2>&1 > /dev/null; then
+    if patch -Np1 --dry-run -i "$SNAP/msm-skillsdir.diff" 2>&1 > /dev/null; then
         patch -Np1 -i "$SNAP/msm-skillsdir.diff"
     fi
     cd "$SNAP_USER_COMMON/mycroft"
