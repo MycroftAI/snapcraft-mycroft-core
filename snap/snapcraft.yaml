@@ -355,6 +355,20 @@ parts:
       '.version': mycroft-source/.version
       '.git*': mycroft-source/
 
+  mycroft-plasma:
+    after: [desktop-qt5]
+    source: https://anongit.kde.org/plasma-mycroft.git
+    plugin: cmake
+    configflags:
+    - -DCMAKE_INSTALL_PREFIX=/usr
+    - -DCMAKE_BUILD_TYPE=Release
+    - -DKDE_INSTALL_LIBDIR=lib
+    - -DKDE_INSTALL_USE_QT_SYS_PATHS=on
+    override-build: |
+      snapcraftctl build
+      chmod +x usr/share/plasma/plasmoids/org.kde.plasma.mycroftplasmoid/contents/code/*service.sh
+
+
 apps:
   mycroft:
     command: alsa-launch mycroft-launch start-all
@@ -379,7 +393,7 @@ apps:
     - wayland
 
   cli:
-    command: mycroft-launch python3 "$SNAP_USER_COMMON/mycroft/mycroft/client/text/main.py"
+    command: mycroft-launch python3 -m mycroft.client.text
     plugs:
     - desktop
     - desktop-legacy
@@ -388,7 +402,7 @@ apps:
     - wayland
 
   bus:
-    command: mycroft-launch python3 "$SNAP_USER_COMMON/mycroft/mycroft/messagebus/service/main.py"
+    command: mycroft-launch python3 -m mycroft.messagebus.service
     plugs:
     - desktop
     - desktop-legacy
@@ -398,7 +412,7 @@ apps:
     - wayland
 
   skills:
-    command: mycroft-launch python3 "$SNAP_USER_COMMON/mycroft/mycroft/skills/main.py"
+    command: mycroft-launch python3 -m mycroft.skills
     plugs:
     - desktop
     - desktop-legacy
@@ -407,7 +421,7 @@ apps:
     - wayland
 
   audio:
-    command: alsa-launch mycroft-launch python3 "$SNAP_USER_COMMON/mycroft/mycroft/audio/main.py"
+    command: alsa-launch mycroft-launch python3 -m mycroft.audio
     plugs:
     - desktop
     - desktop-legacy
@@ -417,7 +431,7 @@ apps:
     - wayland
 
   voice:
-    command: alsa-launch mycroft-launch python3 "$SNAP_USER_COMMON/mycroft/mycroft/client/speech/main.py"
+    command: alsa-launch mycroft-launch python3 -m mycroft.client.speech
     plugs:
     - desktop
     - desktop-legacy
