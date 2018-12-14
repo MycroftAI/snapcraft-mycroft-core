@@ -1,0 +1,6 @@
+#!/bin/sh
+
+export SNAPCRAFT_PRELOAD=$SNAP
+export LD_PRELOAD="$SNAP/@LIBPATH@/@LIBNAME@.so"
+
+exec "$@"

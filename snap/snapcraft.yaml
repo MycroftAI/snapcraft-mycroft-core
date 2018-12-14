@@ -1,8 +1,4 @@
 name: mycroft
-version: latest
-version-script: |
-  cat $SNAPCRAFT_STAGE/mycroft-source/.version | sed -e 's|release/v||'
-icon: snap/gui/mycroft.png
 summary: Your AI personal assistant!
 description: >
   Mycroft is a free and open-source intelligent personal assistant and knowledge
@@ -14,14 +10,60 @@ description: >
 
   Installing skills by voice seems to be broken for now, but you can use
   the `mycroft.msm` command to list, install, and remove skills.
-
+adopt-info: mycroft
 grade: stable
 confinement: strict
 
 parts:
   alsa:
     after: [alsa-lib, alsa-plugins]
+    plugin: nil
+    source: https://github.com/diddledan/snapcraft-alsa.git
+    override-pull: |
+      cat > alsa.conf <<EOF
+      pcm.!default {
+        type pulse
+        fallback "sysdefault"
+        hint {
+          show on
+          description "Default ALSA Output (currently PulseAudio Sound Server)"
+        }
+      }
+      ctl.!default {
+        type pulse
+        fallback "sysdefault"
+      }
+      EOF
+      cat > alsa-launch <<EOF
+      #!/bin/bash
+      if [ "\$SNAP_ARCH" == "amd64" ]; then
+        ARCH="x86_64-linux-gnu"
+      elif [ "\$SNAP_ARCH" == "armhf" ]; then
+        ARCH="arm-linux-gnueabihf"
+      elif [ "\$SNAP_ARCH" == "arm64" ]; then
+        ARCH="aarch64-linux-gnu"
+      else
+        ARCH="\$SNAP_ARCH-linux-gnu"
+      fi
+      export LD_LIBRARY_PATH="\$SNAP/usr/lib/alsa-lib:\$SNAP/usr/lib/\$ARCH/pulseaudio:\$LD_LIBRARY_PATH"
+      export ALSA_CONFIG_PATH="\$SNAP/etc/alsa.conf"
+      # Make PulseAudio socket available inside the snap-specific $XDG_RUNTIME_DIR
+      if [ -n "\$XDG_RUNTIME_DIR" ]; then
+          pulsenative="pulse/native"
+          pulseaudio_sockpath="\$XDG_RUNTIME_DIR/../\$pulsenative"
+          if [ -S "\$pulseaudio_sockpath" ]; then
+              export PULSE_SERVER="unix:\${pulseaudio_sockpath}"
+          fi
+      fi
+      exec "\$@"
+      EOF
+    override-build: |
+      snapcraftctl build
+      install -m644 -D -t $SNAPCRAFT_PART_INSTALL/etc alsa.conf
+      install -m755 -D -t $SNAPCRAFT_PART_INSTALL/bin alsa-launch
   alsa-lib:
+    plugin: autotools
+    source: https://mirrorservice.org/sites/ftp.alsa-project.org/pub/lib/alsa-lib-1.1.6.tar.bz2
     # configflags needed until LP#1766878 is fixed
     configflags:
     - --prefix=/usr
@@ -39,9 +81,23 @@ parts:
     - --disable-topology
     - --disable-ucm
     - --enable-symbolic-functions
-    prime: ['*']
+    override-build: |
+      snapcraftctl build
+      for pcfile in $SNAPCRAFT_PART_INSTALL/usr/lib/pkgconfig/*.pc; do
+        sed -i -E "s~^((include|lib)dir=)/usr(/local)?~\1\${prefix}~g" $pcfile || true
+        sed -i -E "s~^((exec_)?prefix=)(/usr(/local)?)~\1/\3~" $pcfile || true
+      done
+    organize:
+      snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/*: usr/lib/
+      snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/*: usr/share/
+    prime:
+    - usr/include
+    - usr/lib
+    - usr/share/alsa
   alsa-plugins:
     after: [alsa-lib]
+    plugin: autotools
+    source: https://mirrorservice.org/sites/ftp.alsa-project.org/pub/plugins/alsa-plugins-1.1.6.tar.bz2
     # configflags needed until LP#1766878 is fixed
     configflags:
     - --prefix=/usr
@@ -58,29 +114,54 @@ parts:
     - --with-plugindir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/alsa-lib
     - --disable-static
     - LDFLAGS=-L$SNAPCRAFT_STAGE/usr/lib
-    prime: ['*']
+    organize:
+      snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/*: usr/lib/
+      snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/*: usr/share/
+    prime:
+    - lib
+    - usr/lib
+    - usr/share/alsa
+    build-packages:
+    - libpulse-dev
+    stage-packages:
+    - libpulse0
 
   patches:
     source: patches
     plugin: dump
-    prime:
-    - msm-skillsdir.diff
-    - mycroft-cache.diff
+    prime: [msm-skillsdir.diff]
 
   scripts:
     source: scripts
     source-type: local
     plugin: dump
-    override-pull: |
-      snapcraftctl pull
-      chmod +x mycroft-launch
     organize:
       mycroft-launch: bin/mycroft-launch
+    stage:
+    - bin/mycroft-launch
+
+  desktop:
+    source: desktop
+    plugin: dump
+    organize:
+      mycroft.desktop: usr/share/applications/mycroft.desktop
+      mycroft.png: usr/share/icons/mycroft.png
+
+  snapcraft-preload:
+    # Until sergiusens/snapcraft-preload#29 is merged we will keep this local
+    #source: https://github.com/sergiusens/snapcraft-preload.git
+    source: snapcraft-preload
+    source-type: local
+    plugin: cmake
+    build-packages:
+    - gcc-multilib
+    - g++-multilib
 
   mimic:
     after: [patches]
     plugin: autotools
     source: https://github.com/MycroftAI/mimic.git
+    source-type: git
     source-depth: 1
     configflags:
     - --prefix=/usr
@@ -95,6 +176,14 @@ parts:
     stage-packages:
     - libpcre2-8-0
     - libpulse0
+    prime:
+    - usr/bin
+    - usr/include
+    - usr/lib
+    - -usr/lib/*.a
+    - -usr/lib/*.la
+    - -usr/lib/pkgconfig
+    - usr/share/mimic
 
   portaudio:
     after: [alsa]
@@ -108,6 +197,9 @@ parts:
     - libjack-dev
     stage-packages:
     - libjack0
+    prime:
+    - usr/include
+    - usr/lib
 
   mpg123:
     after: [alsa]
@@ -121,20 +213,20 @@ parts:
     - libpulse-dev
     stage-packages:
     - libpulse0
+    prime:
+    - usr/bin
+    - usr/lib
+    - -usr/lib/*.la
 
   vlc:
     after: [alsa, mpg123, portaudio]
     source: https://download.videolan.org/pub/videolan/vlc/3.0.3/vlc-3.0.3.tar.xz
     source-checksum: sha256/9ba8b04bdb13f7860a2041768ac83b47b397a36549c71c530b94028a3cfd5b51
     plugin: autotools
-    override-pull: |
-      snapcraftctl pull
-      sed -i 's|0\.19\.8|0\.19\.7|'  configure.ac
     override-build: |
       cd extras/tools
       ./bootstrap
       make -j$SNAPCRAFT_PARALLEL_BUILD_COUNT .protoc
-      # make -j$SNAPCRAFT_PARALLEL_BUILD_COUNT .nasm
       cd ../../
       export PATH=$PWD/extras/tools/build/bin:$PATH
       cd contrib && mkdir linux && cd linux
@@ -202,21 +294,20 @@ parts:
     - libavahi-client-dev
     - libcdio-dev
     - libdbus-1-dev
-    - libdirectfb-dev
     - libebml-dev
-    - libfreerdp-dev
     - libfreetype6-dev
     - libfribidi-dev
     - libglib2.0-dev
     - libgnutls28-dev
     - libidn11-dev
-    - libjpeg8-dev
     - libjack-dev
+    - libjpeg8-dev
     - liblircclient-dev
     - liblua5.2-dev
     - libmatroska-dev
     - libmtp-dev
     - libncursesw5-dev
+    - libnotify-dev
     - libpng-dev
     - libpulse-dev
     - librsvg2-dev
@@ -226,29 +317,17 @@ parts:
     - libudev-dev
     - libupnp-dev
     - libv4l-dev
-    - libva-dev
-    - libvdpau-dev
-    - libwayland-dev
-    - libx11-dev
     - libxcb-composite0-dev
-    - libxcb-keysyms1-dev
     - libxcb-randr0-dev
     - libxcb-shm0-dev
     - libxcb-xfixes0-dev
     - libxcb-xv0-dev
     - libxcb1-dev
-    - libxext-dev
-    - libxi-dev
-    - libxinerama-dev
-    - libxkbcommon-x11-dev
     - libxml2-dev
-    - libxpm-dev
-    - libzvbi-dev
     - lua5.2
     - make
     - pkg-config
     - ragel
-    - wayland-protocols
     - xz-utils
     - yasm
     - zlib1g-dev
@@ -257,57 +336,46 @@ parts:
     - dbus-x11
     - fonts-freefont-ttf
     - frameworkintegration
+    - libcdio13
+    - libdbus-1-3
     - libebml4v5
-    - libfreerdp-client1.1
-    - libfreerdp-core1.1
-    - libfreerdp-gdi1.1
     - libfreetype6
     - libfribidi0
-    - libgcc1
     - libglib2.0-0
+    - libgnutls30
+    - libidn11
     - libjack0
     - libjpeg8
+    - liblircclient0
     - liblua5.2-0
     - libmatroska6v5
     - libmtp9
+    - libncursesw5
     - libnotify4
+    - libpng12-0
     - libpulse0
     - librsvg2-2
-    - libschroedinger-1.0-0
     - libsecret-1-0
     - libupnp6
-    - libva-drm1
-    - libva-x11-1
-    - libva1
-    - libvdpau1
-    - libwayland-client0
-    - libx11-6
+    - libv4l-0
     - libxcb-composite0
-    - libxcb-keysyms1
     - libxcb-randr0
     - libxcb-shm0
     - libxcb-xv0
     - libxcb1
-    - libxext6
-    - libxi6
-    - libxinerama1
-    - libxkbcommon-x11-0
-    - libxpm4
-    - libzvbi0
-    - mesa-utils
-    - mesa-vdpau-drivers
-    - vdpau-va-driver
+    - libxml2
     - zlib1g
 
   mycroft-deps:
-    after:
-    - alsa
-    - mimic
-    - mpg123
-    - patches
-    - portaudio
-    - vlc
     plugin: nil
+    override-stage: |
+      snapcraftctl stage
+      sed -i -E 's|(/usr/lib/x86_64-linux-gnu/libc_nonshared.a)|/snap/mycroft/current/\1|' \
+        $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libc.so
+      sed -i -E 's|(/usr/lib/x86_64-linux-gnu/libmvec_nonshared.a)|/snap/mycroft/current/\1|' \
+        $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libm.so
+      sed -i -E 's|(/usr/lib/x86_64-linux-gnu/libpthread_nonshared.a)|/snap/mycroft/current/\1|' \
+        $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpthread.so
     stage-packages:
     - libgdk-pixbuf2.0-0 # yad
     - libgtk-3-0         # yad
@@ -316,23 +384,27 @@ parts:
     - libnotify4         # yad
     - libnotify-bin
     - yad
+    - binutils
     - bison
-    - build-essential
-    - coreutils
+    - cmake
     - curl
     - flac
+    - g++
+    - gcc
     - git
     - jq
-    - libc6
+    - libc6-dev
     - libfann-dev
     - libffi-dev
-    - libgcc1
     - libglib2.0-dev
     - libicu-dev
     - libjpeg-dev
-    - libpcre3
+    - libpcre2-dev
     - libssl-dev
     - locales-all
+    - make
+    - patch
+    - pkg-config
     - pulseaudio-utils
     - python-gobject-2-dev
     - python-setuptools
@@ -342,31 +414,36 @@ parts:
     - zlib1g
 
   mycroft:
+    after: [mycroft-deps, snapcraft-preload, patches, mimic, portaudio, mpg123, vlc]
     source: https://github.com/MycroftAI/mycroft-core.git
+    source-type: git
+    source-depth: 1
     plugin: dump
     override-pull: |
       snapcraftctl pull
       git checkout $(git describe --tags --abbrev=0 --match release/v*)
-      git describe --tags > .version
+      git describe --tags | sed -e 's|release/v||' > .version
+      snapcraftctl set-version "$(cat .version)"
+      patch -Np1 -i "$SNAPCRAFT_STAGE/mycroft-cache.diff"
     organize:
       '*': mycroft-source/
       '.*.yml': mycroft-source/
-      '.coveralls': mycroft-source/.coveralls
-      '.version': mycroft-source/.version
-      '.git*': mycroft-source/
+      .gitignore: mycroft-source/
+      .gitmessage: mycroft-source/
+      .version: mycroft-source/
 
-  mycroft-plasma:
-    after: [desktop-qt5]
-    source: https://anongit.kde.org/plasma-mycroft.git
-    plugin: cmake
-    configflags:
-    - -DCMAKE_INSTALL_PREFIX=/usr
-    - -DCMAKE_BUILD_TYPE=Release
-    - -DKDE_INSTALL_LIBDIR=lib
-    - -DKDE_INSTALL_USE_QT_SYS_PATHS=on
-    override-build: |
-      snapcraftctl build
-      chmod +x usr/share/plasma/plasmoids/org.kde.plasma.mycroftplasmoid/contents/code/*service.sh
+  # mycroft-plasma:
+  #   after: [desktop-qt5]
+  #   source: https://anongit.kde.org/plasma-mycroft.git
+  #   plugin: cmake
+  #   configflags:
+  #   - -DCMAKE_INSTALL_PREFIX=/usr
+  #   - -DCMAKE_BUILD_TYPE=Release
+  #   - -DKDE_INSTALL_LIBDIR=lib
+  #   - -DKDE_INSTALL_USE_QT_SYS_PATHS=on
+  #   override-build: |
+  #     snapcraftctl build
+  #     chmod +x usr/share/plasma/plasmoids/org.kde.plasma.mycroftplasmoid/contents/code/*service.sh
 
 
 apps:
@@ -375,6 +452,7 @@ apps:
     plugs:
     - desktop
     - desktop-legacy
+    - mount-observe
     - network
     - network-bind
     - pulseaudio
@@ -382,7 +460,7 @@ apps:
     - wayland
 
   msm:
-    command: mycroft-launch python3 "$SNAP_USER_COMMON/mycroft/.venv/bin/msm"
+    command: mycroft-launch msm
     plugs:
     - desktop
     - desktop-legacy
@@ -393,7 +471,7 @@ apps:
     - wayland
 
   cli:
-    command: mycroft-launch python3 -m mycroft.client.text
+    command: mycroft-launch client.text
     plugs:
     - desktop
     - desktop-legacy
@@ -402,7 +480,7 @@ apps:
     - wayland
 
   bus:
-    command: mycroft-launch python3 -m mycroft.messagebus.service
+    command: mycroft-launch messagebus.service
     plugs:
     - desktop
     - desktop-legacy
@@ -412,16 +490,17 @@ apps:
     - wayland
 
   skills:
-    command: mycroft-launch python3 -m mycroft.skills
+    command: mycroft-launch skills
     plugs:
     - desktop
     - desktop-legacy
+    - mount-observe
     - network
     - x11
     - wayland
 
   audio:
-    command: alsa-launch mycroft-launch python3 -m mycroft.audio
+    command: alsa-launch mycroft-launch audio
     plugs:
     - desktop
     - desktop-legacy
@@ -431,7 +510,7 @@ apps:
     - wayland
 
   voice:
-    command: alsa-launch mycroft-launch python3 -m mycroft.client.speech
+    command: alsa-launch mycroft-launch client.speech
     plugs:
     - desktop
     - desktop-legacy

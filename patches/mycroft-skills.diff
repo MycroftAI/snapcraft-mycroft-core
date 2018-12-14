@@ -1,0 +1,11 @@
+diff --git a/mycroft/skills/__init__.py b/mycroft/skills/__init__.py
+index c9268852d7..c0d21fdbe6 100644
+--- a/mycroft/skills/__init__.py
++++ b/mycroft/skills/__init__.py
+@@ -11,3 +11,6 @@
+ # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
++
++import multiprocessing
++multiprocessing.current_process()._config['semprefix'] = '/snap.mycroft.sem'

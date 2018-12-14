@@ -1,6 +1,6 @@
---- a/lib/python3.5/site-packages/msm/mycroft_skills_manager.py	2018-07-10 18:05:09.126435756 +0100
-+++ b/lib/python3.5/site-packages/msm/mycroft_skills_manager.py	2018-07-10 19:00:12.275524635 +0100
-@@ -23,6 +23,7 @@
+--- a/lib/python3.5/site-packages/msm/mycroft_skills_manager.py        2018-07-10 18:05:09.126435756 +0100
++++ b/lib/python3.5/site-packages/msm/mycroft_skills_manager.py        2018-07-10 19:00:12.275524635 +0100
+@@ -23,6 +23,7 @@ import logging
  from glob import glob
  from itertools import chain
  from multiprocessing.pool import ThreadPool
@@ -8,7 +8,7 @@
  from os.path import expanduser, join, dirname, isdir
  
  from typing import Dict, List
-@@ -42,8 +43,13 @@
+@@ -42,8 +43,13 @@ class MycroftSkillsManager(object):
      def __init__(self, platform='default', skills_dir=None, repo=None,
                   versioned=True):
          self.platform = platform
@@ -24,8 +24,24 @@
          self.repo = repo or SkillRepo()
          self.versioned = versioned
  
---- a/lib64/python3.5/site-packages/msm/skill_repo.py	2018-07-10 19:26:50.774291041 +0100
-+++ b/lib64/python3.5/site-packages/msm/skill_repo.py	2018-07-10 19:26:14.933507937 +0100
+--- a/lib/python3.5/site-packages/msm/skill_entry.py
++++ b/lib/python3.5/site-packages/msm/skill_entry.py
+@@ -227,9 +227,12 @@ class SkillEntry(object):
+             tmp_location = mktemp()
+             Repo.clone_from(self.url, tmp_location)
+             self.is_local = True
+-            Git(tmp_location).reset(self.sha or 'HEAD', hard=True)
+         except GitCommandError as e:
+             raise CloneException(e.stderr)
++        try:
++            Git(tmp_location).reset(self.sha or 'HEAD', hard=True)
++        except GitCommandError:
++            pass
+ 
+         if isfile(join(tmp_location, '__init__.py')):
+             move(join(tmp_location, '__init__.py'),
+--- a/lib/python3.5/site-packages/msm/skill_repo.py  2018-07-10 19:26:50.774291041 +0100
++++ b/lib/python3.5/site-packages/msm/skill_repo.py  2018-07-10 19:26:14.933507937 +0100
 @@ -20,7 +20,7 @@
  # specific language governing permissions and limitations
  # under the License.
@@ -35,7 +51,7 @@
  from os.path import exists, join, isdir, dirname, basename
  
  from git import Repo
-@@ -33,6 +33,9 @@
+@@ -36,6 +36,9 @@ LOG = logging.getLogger(__name__)
  
  class SkillRepo(object):
      def __init__(self, path=None, url=None, branch=None):
@@ -44,4 +60,19 @@
 +
          self.path = path or "/opt/mycroft/.skills-repo"
          self.url = url or "https://github.com/MycroftAI/mycroft-skills"
-         self.branch = branch or "18.02"
+         self.branch = branch or "18.08"
+@@ -59,9 +62,13 @@ class SkillRepo(object):
+ 
+         try:
+             git.checkout(self.branch)
++        except GitCommandError as exc:
++            raise MsmException('Invalid branch: ' + self.branch)
++
++        try:
+             git.reset('origin/' + self.branch, hard=True)
+         except GitCommandError:
+-            raise MsmException('Invalid branch: ' + self.branch)
++            pass
+ 
+     def get_skill_data(self):
+         """ generates tuples of name, path, url, sha """

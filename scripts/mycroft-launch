@@ -78,9 +78,9 @@ if [ -f $SNAP/usr/lib/$ARCH/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders ] && [ ! -f 
   $SNAP/usr/lib/$ARCH/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders > $GDK_PIXBUF_MODULE_FILE
 fi
 
-export CFLAGS="--sysroot=$SNAP" # -I$SNAP/usr/include -I$SNAP/usr/include/$ARCH"
-export CXXFLAGS="--sysroot=$SNAP"
-export LDFLAGS="--sysroot=$SNAP" # -L$SNAP/usr/lib -L$SNAP/usr/lib/$ARCH -L$SNAP/lib -L$SNAP/lib/$ARCH"
+export CFLAGS="-I$SNAP/usr/include -I$SNAP/usr/include/$ARCH"
+export CXXFLAGS="$CXXFLAGS"
+export LDFLAGS="-L$SNAP/usr/lib -L$SNAP/usr/lib/$ARCH -L$SNAP/lib -L$SNAP/lib/$ARCH"
 export SWIG_LIB="$SNAP/usr/share/swig3.0"
 
 export MYCROFT_CACHE="$SNAP_USER_COMMON/.cache/mycroft_web_cache.json"
@@ -100,17 +100,13 @@ if [ ! -d "$SNAP_USER_COMMON/mycroft-core" ]; then
     fi
 fi
 
-if [ ! -f "$SNAP_USER_COMMON/mycroft-core/.version" -o "$(cat "$SNAP_USER_COMMON/mycroft-core/.version")" != "$(cat "$SNAP/mycroft-source/.version")" ]; then
+if [ ! -f "$SNAP_USER_COMMON/mycroft-core/.version" ] || [ "$(cat "$SNAP_USER_COMMON/mycroft-core/.version")" != "$(cat "$SNAP/mycroft-source/.version")" ]; then
     cd "$SNAP_USER_COMMON/mycroft-core"
 
-    ACTION="Installing"
-    [ -f "$SNAP_USER_COMMON/mycroft-core/.version" ] && ACTION="Updating"
+    [ -f "$SNAP_USER_COMMON/mycroft-core/.version" ] && ACTION="Updating" || ACTION="Installing"
 
     rsync -rv --exclude .venv --delete "$SNAP/mycroft-source/" "$SNAP_USER_COMMON/mycroft-core/" | \
     yad --progress --pulsate --title="Mycroft" --text="$ACTION mycroft" --width=400 --center --no-buttons --auto-close --on-top --no-escape
-    if patch -Np1 --dry-run -i "$SNAP/mycroft-cache.diff" 2>&1 > /dev/null; then
-        patch -Np1 -i "$SNAP/mycroft-cache.diff"
-    fi
 
     python3 -m venv "$SNAP_USER_COMMON/mycroft-core/.venv" --without-pip
     rm -f "$SNAP_USER_COMMON/mycroft-core/.venv/bin/python3"
@@ -123,6 +119,8 @@ if [ ! -f "$SNAP_USER_COMMON/mycroft-core/.version" -o "$(cat "$SNAP_USER_COMMON
     
     "$SNAP_USER_COMMON/mycroft-core/.venv/bin/python3" $TMPDIR/get-pip.py | \
     yad --progress --pulsate --title="Mycroft" --text="Installing Python PIP" --width=400 --center --no-buttons --auto-close --on-top --no-escape
+
+    sed -i 's|^def rmtree(dir, ignore_errors=False):|def rmtree(dir, ignore_errors=True):|' "$SNAP_USER_COMMON/mycroft-core/.venv/lib/python3.5/site-packages/pip/_internal/utils/misc.py"
 
     . "$SNAP_USER_COMMON/mycroft-core/.venv/bin/activate"
 
@@ -140,7 +138,7 @@ if [ ! -f "$SNAP_USER_COMMON/mycroft-core/.version" -o "$(cat "$SNAP_USER_COMMON
     if ! grep -q "$SNAP_USER_COMMON/mycroft-core" $VENV_PATH_FILE; then
         if grep -q "$SNAP_USER_COMMON/mycroft" $VENV_PATH_FILE; then
             echo "Swapping mycroft path to mycroft-core in virtualenv"
-            sed -i "s|$SNAP_USER_COMMON/mycroft|$SNAP_USER_COMMON/mycroft-core|" "$VENV_PATH_FILE"
+            sed -i.tmp "s|$SNAP_USER_COMMON/mycroft|$SNAP_USER_COMMON/mycroft-core|" "$VENV_PATH_FILE"
         else
             echo "Adding mycroft-core to virtualenv path"
             sed -i.tmp '1 a\
@@ -191,7 +189,7 @@ if ! grep "data_dir" "$SNAP_USER_COMMON/.config/mycroft/mycroft.conf" 2>&1 > /de
 '"    \"data_dir\": \"$SNAP_USER_COMMON/mycroft-data\","'
 ' "$SNAP_USER_COMMON/.mycroft/mycroft.conf"
 elif grep "\"data_dir\": \"$SNAP_USER_COMMON/skills\"" "$SNAP_USER_COMMON/.config/mycroft/mycroft.conf"; then
-    sed -i "s|\"data_dir\": \"$SNAP_USER_COMMON/skills\"|\"data_dir\": \"$SNAP_USER_COMMON/mycroft-data\"|" " $SNAP_USER_COMMON/.config/mycroft/mycroft.conf"
+    sed -i.tmp "s|\"data_dir\": \"$SNAP_USER_COMMON/skills\"|\"data_dir\": \"$SNAP_USER_COMMON/mycroft-data\"|" " $SNAP_USER_COMMON/.config/mycroft/mycroft.conf"
 fi
 
 if ! grep "cache_path" "$SNAP_USER_COMMON/.config/mycroft/mycroft.conf" 2>&1 > /dev/null; then
@@ -213,15 +211,19 @@ if [ ! -d "$SNAP_USER_COMMON/mycroft-data" ]; then
     fi
 fi
 
-if [ "$1" = "start-all" -o "$2" = "start-all" ]; then
+if [ "$1" = "start-all" ] || [ "$2" = "start-all" ]; then
     python3 -m mycroft.messagebus.service &
-    python3 -m mycroft.skills &
+    snapcraft-preload python3 -m mycroft.skills &
     python3 -m mycroft.audio &
     python3 -m mycroft.client.speech &
 
-    notify-send --icon "${SNAP}/meta/gui/mycroft.png" --expire-time=15000 "Mycroft" "Mycroft is now running, but it may be a minute more until Mycroft is ready to talk."
+    # notify-send --icon "${SNAP}/meta/gui/mycroft.png" --expire-time=15000 "Mycroft" "Mycroft is now running, but it may be a minute more until Mycroft is ready to talk."
 
     wait
+elif [ "$1" = "skills" ]; then
+    exec snapcraft-preload python3 -m mycroft.skills
 else
-    exec "$@"
+    COMMAND="$1"
+    shift
+    exec python3 -m "mycroft.$COMMAND" "$@"
 fi
