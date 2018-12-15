@@ -78,8 +78,6 @@ if [ -f $SNAP/usr/lib/$ARCH/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders ] && [ ! -f 
   $SNAP/usr/lib/$ARCH/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders > $GDK_PIXBUF_MODULE_FILE
 fi
 
-export CFLAGS="-I$SNAP/usr/include -I$SNAP/usr/include/$ARCH"
-export CXXFLAGS="$CXXFLAGS"
 export LDFLAGS="-L$SNAP/usr/lib -L$SNAP/usr/lib/$ARCH -L$SNAP/lib -L$SNAP/lib/$ARCH"
 export SWIG_LIB="$SNAP/usr/share/swig3.0"
 
@@ -89,7 +87,7 @@ export MYCROFT_SKILLS_REPO="$SNAP_USER_COMMON/skills/.skills-repo"
 export PYTHONPATH="$SNAP/opt/mycroft:$SNAP/lib:$SNAP/usr/lib"
 export GIT_EXEC_PATH="$SNAP/usr/lib/git-core"
 
-export MPG123_MODDIR="$SNAP/usr/lib/mpg123"
+export MPG123_MODDIR="$SNAP/usr/lib/$ARCH/mpg123"
 export VLC_PLUGIN_PATH="$SNAP/usr/lib"
 
 if [ ! -d "$SNAP_USER_COMMON/mycroft-core" ]; then
@@ -120,7 +118,7 @@ if [ ! -f "$SNAP_USER_COMMON/mycroft-core/.version" ] || [ "$(cat "$SNAP_USER_CO
     "$SNAP_USER_COMMON/mycroft-core/.venv/bin/python3" $TMPDIR/get-pip.py | \
     yad --progress --pulsate --title="Mycroft" --text="Installing Python PIP" --width=400 --center --no-buttons --auto-close --on-top --no-escape
 
-    sed -i 's|^def rmtree(dir, ignore_errors=False):|def rmtree(dir, ignore_errors=True):|' "$SNAP_USER_COMMON/mycroft-core/.venv/lib/python3.5/site-packages/pip/_internal/utils/misc.py"
+    sed -i 's|^def rmtree(dir, ignore_errors=False):|def rmtree(dir, ignore_errors=True):|' "$SNAP_USER_COMMON/mycroft-core/.venv/lib/python3.6/site-packages/pip/_internal/utils/misc.py"
 
     . "$SNAP_USER_COMMON/mycroft-core/.venv/bin/activate"
 
@@ -163,20 +161,16 @@ fi
 
 cd "$SNAP_USER_COMMON/mycroft-core"
 
-if [ ! -d "$SNAP_USER_COMMON/.config" ]; then
-    mkdir "$SNAP_USER_COMMON/.config"
-fi
-
-if [ ! -d "$SNAP_USER_COMMON/.config/mycroft" ]; then
-    if [ -d "$SNAP_USER_COMMON/.mycroft" ]; then
-        mv "$SNAP_USER_COMMON/.mycroft" "$SNAP_USER_COMMON/.config/mycroft"
+if [ ! -d "$SNAP_USER_COMMON/.mycroft" ]; then
+    if [ -d "$SNAP_USER_COMMON/.config/mycroft" ]; then
+        mv "$SNAP_USER_COMMON/.config/mycroft" "$SNAP_USER_COMMON/.mycroft"
     else
-        mkdir -p "$SNAP_USER_COMMON/.config/mycroft"
+        mkdir -p "$SNAP_USER_COMMON/.mycroft"
     fi
 fi
 
-if [ ! -f "$SNAP_USER_COMMON/.config/mycroft/mycroft.conf" ]; then
-    cat > "$SNAP_USER_COMMON/.config/mycroft/mycroft.conf" <<EOF
+if [ ! -f "$SNAP_USER_COMMON/.mycroft/mycroft.conf" ]; then
+    cat > "$SNAP_USER_COMMON/.mycroft/mycroft.conf" <<EOF
 {
     "data_dir": "$SNAP_USER_COMMON/mycroft-data",
     "cache_path": "$SNAP_USER_COMMON/.cache/mycroft"
@@ -184,19 +178,19 @@ if [ ! -f "$SNAP_USER_COMMON/.config/mycroft/mycroft.conf" ]; then
 EOF
 fi
 
-if ! grep "data_dir" "$SNAP_USER_COMMON/.config/mycroft/mycroft.conf" 2>&1 > /dev/null; then
+if ! grep "data_dir" "$SNAP_USER_COMMON/.mycroft/mycroft.conf" 2>&1 > /dev/null; then
     sed -i.tmp '1 a\
 '"    \"data_dir\": \"$SNAP_USER_COMMON/mycroft-data\","'
 ' "$SNAP_USER_COMMON/.mycroft/mycroft.conf"
-elif grep "\"data_dir\": \"$SNAP_USER_COMMON/skills\"" "$SNAP_USER_COMMON/.config/mycroft/mycroft.conf"; then
-    sed -i.tmp "s|\"data_dir\": \"$SNAP_USER_COMMON/skills\"|\"data_dir\": \"$SNAP_USER_COMMON/mycroft-data\"|" " $SNAP_USER_COMMON/.config/mycroft/mycroft.conf"
+elif grep "\"data_dir\": \"$SNAP_USER_COMMON/skills\"" "$SNAP_USER_COMMON/.mycroft/mycroft.conf"; then
+    sed -i.tmp "s|\"data_dir\": \"$SNAP_USER_COMMON/skills\"|\"data_dir\": \"$SNAP_USER_COMMON/mycroft-data\"|" "$SNAP_USER_COMMON/.mycroft/mycroft.conf"
 fi
 
-if ! grep "cache_path" "$SNAP_USER_COMMON/.config/mycroft/mycroft.conf" 2>&1 > /dev/null; then
+if ! grep "cache_path" "$SNAP_USER_COMMON/.mycroft/mycroft.conf" 2>&1 > /dev/null; then
     sed -i.tmp '1 a\
 '"    \"cache_path\": \"$SNAP_USER_COMMON/.cache/mycroft\","'
-' "$SNAP_USER_COMMON/.config/mycroft/mycroft.conf"
-    sed -i.tmp '/"cache_dir"/d' "$SNAP_USER_COMMON/.config/mycroft/mycroft.conf"
+' "$SNAP_USER_COMMON/.mycroft/mycroft.conf"
+    sed -i.tmp '/"cache_dir"/d' "$SNAP_USER_COMMON/.mycroft/mycroft.conf"
 fi
 
 if [ ! -d "$SNAP_USER_COMMON/.cache/mycroft" ]; then
@@ -211,19 +205,31 @@ if [ ! -d "$SNAP_USER_COMMON/mycroft-data" ]; then
     fi
 fi
 
-if [ "$1" = "start-all" ] || [ "$2" = "start-all" ]; then
-    python3 -m mycroft.messagebus.service &
-    snapcraft-preload python3 -m mycroft.skills &
-    python3 -m mycroft.audio &
-    python3 -m mycroft.client.speech &
-
-    # notify-send --icon "${SNAP}/meta/gui/mycroft.png" --expire-time=15000 "Mycroft" "Mycroft is now running, but it may be a minute more until Mycroft is ready to talk."
-
-    wait
-elif [ "$1" = "skills" ]; then
-    exec snapcraft-preload python3 -m mycroft.skills
-else
-    COMMAND="$1"
-    shift
-    exec python3 -m "mycroft.$COMMAND" "$@"
+export LD_LIBRARY_PATH="$SNAP/usr/lib/$ARCH/pulseaudio:$LD_LIBRARY_PATH"
+# Make PulseAudio socket available inside the snap-specific $XDG_RUNTIME_DIR
+if [ -n "$XDG_RUNTIME_DIR" ]; then
+    pulsenative="pulse/native"
+    pulseaudio_sockpath="$XDG_RUNTIME_DIR/../$pulsenative"
+    if [ -S "$pulseaudio_sockpath" ]; then
+        export PULSE_SERVER="unix:${pulseaudio_sockpath}"
+    fi
 fi
+
+case "$1" in
+    "start-all")
+        python3 -m mycroft.messagebus.service &
+        snapcraft-preload python3 -m mycroft.skills &
+        python3 -m mycroft.audio &
+        python3 -m mycroft.client.speech &
+
+        # notify-send --icon "${SNAP}/meta/gui/mycroft.png" --expire-time=15000 "Mycroft" "Mycroft is now running, but it may be a minute more until Mycroft is ready to talk."
+
+        wait
+        ;;
+    "skills")
+        exec snapcraft-preload python3 -m mycroft.skills
+        ;;
+    *)
+        exec python3 -m "mycroft.$1"
+        ;;
+esac
