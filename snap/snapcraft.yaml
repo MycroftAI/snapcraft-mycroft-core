@@ -35,6 +35,8 @@ passthrough:
       bind: $SNAP/usr/include
     /usr/share/alsa/alsa.conf:
       symlink: $SNAP/etc/asound.conf
+    /etc/mycroft/mycroft.conf:
+      symlink: $SNAP/etc/mycroft/mycroft.conf
 
 parts:
   alsa:
@@ -59,71 +61,6 @@ parts:
     override-build: |
       snapcraftctl build
       install -m644 -D -t $SNAPCRAFT_PART_INSTALL/etc asound.conf
-
-  # alsa-lib:
-  #   plugin: autotools
-  #   source: https://mirrorservice.org/sites/ftp.alsa-project.org/pub/lib/alsa-lib-1.1.6.tar.bz2
-  #   # configflags needed until LP#1766878 is fixed
-  #   configflags:
-  #   - --prefix=/usr
-  #   - --sysconfdir=/etc
-  #   - --libexec=/usr/lib
-  #   - --libdir=/usr/lib
-  #   - --localstatedir=/var
-  #   - --with-configdir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/alsa
-  #   - --with-plugindir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/alsa-lib
-  #   - --disable-alisp
-  #   - --disable-aload
-  #   - --disable-python
-  #   - --disable-rawmidi
-  #   - --disable-static
-  #   - --disable-topology
-  #   - --disable-ucm
-  #   - --enable-symbolic-functions
-  #   override-build: |
-  #     snapcraftctl build
-  #     for pcfile in $SNAPCRAFT_PART_INSTALL/usr/lib/pkgconfig/*.pc; do
-  #       sed -i -E "s~^((include|lib)dir=)/usr(/local)?~\1\${prefix}~g" $pcfile || true
-  #       sed -i -E "s~^((exec_)?prefix=)(/usr(/local)?)~\1/\3~" $pcfile || true
-  #     done
-  #   organize:
-  #     snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/*: usr/lib/
-  #     snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/*: usr/share/
-  #   prime:
-  #   - usr/include
-  #   - usr/lib
-  #   - usr/share/alsa
-  # alsa-plugins:
-  #   after: [alsa-lib]
-  #   plugin: autotools
-  #   source: https://mirrorservice.org/sites/ftp.alsa-project.org/pub/plugins/alsa-plugins-1.1.6.tar.bz2
-  #   # configflags needed until LP#1766878 is fixed
-  #   configflags:
-  #   - --prefix=/usr
-  #   - --sysconfdir=/etc
-  #   - --libexec=/usr/lib
-  #   - --libdir=/usr/lib
-  #   - --localstatedir=/var
-  #   - --disable-arcamav
-  #   - --disable-avcodec
-  #   - --disable-jack
-  #   - --disable-mix
-  #   - --disable-oss
-  #   - --disable-usbstream
-  #   - --with-plugindir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/alsa-lib
-  #   - --disable-static
-  #   - LDFLAGS=-L$SNAPCRAFT_STAGE/usr/lib
-  #   organize:
-  #     snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/*: usr/lib/
-  #     snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/*: usr/share/
-  #   prime:
-  #   - lib
-  #   - usr/lib
-  #   - usr/share/alsa
-  #   build-packages:
-  #   - libpulse-dev
-  #   stage-packages:
-  #   - libpulse0
 
   patches:
     source: patches
@@ -184,186 +121,19 @@ parts:
     - -usr/lib/pkgconfig
     - usr/share/mimic
 
-  # portaudio:
-  #   after: [alsa]
-  #   source: http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz
-  #   plugin: cmake
-  #   configflags:
-  #   - -DCMAKE_INSTALL_PREFIX=/usr
-  #   - -DPA_USE_ALSA=ON
-  #   - -DPA_USE_JACK=ON
-  #   build-packages:
-  #   - libjack-dev
-  #   stage-packages:
-  #   - libjack0
-  #   prime:
-  #   - usr/include
-  #   - usr/lib
-
-  # mpg123:
-  #   after: [alsa]
-  #   source: http://sourceforge.mirrorservice.org/m/mp/mpg123/mpg123/1.25.10/mpg123-1.25.10.tar.bz2
-  #   plugin: autotools
-  #   configflags:
-  #   - --prefix=/usr
-  #   - --disable-static
-  #   - --with-default-audio=pulse
-  #   build-packages:
-  #   - libpulse-dev
-  #   stage-packages:
-  #   - libpulse0
-  #   prime:
-  #   - usr/bin
-  #   - usr/lib
-  #   - -usr/lib/*.la
-
-  # vlc:
-  #   after: [alsa, mpg123, portaudio]
-  #   source: https://download.videolan.org/pub/videolan/vlc/3.0.3/vlc-3.0.3.tar.xz
-  #   source-checksum: sha256/9ba8b04bdb13f7860a2041768ac83b47b397a36549c71c530b94028a3cfd5b51
-  #   plugin: autotools
-  #   override-build: |
-  #     cd extras/tools
-  #     ./bootstrap
-  #     make -j$SNAPCRAFT_PARALLEL_BUILD_COUNT .protoc
-  #     cd ../../
-  #     export PATH=$PWD/extras/tools/build/bin:$PATH
-  #     cd contrib && mkdir linux && cd linux
-  #     ../bootstrap \
-  #       --disable-a52 \
-  #       --disable-chromaprint \
-  #       --disable-dca \
-  #       --disable-disc \
-  #       --disable-ebml \
-  #       --disable-fluid \
-  #       --disable-fontconfig \
-  #       --disable-freetype2 \
-  #       --disable-gettext \
-  #       --disable-glib \
-  #       --disable-gnutls \
-  #       --disable-gpg-error \
-  #       --disable-jack \
-  #       --disable-jpeg \
-  #       --disable-libdsm \
-  #       --disable-libxml2 \
-  #       --disable-lua \
-  #       --disable-matroska \
-  #       --disable-mfx \
-  #       --disable-modplug \
-  #       --disable-mpcdec \
-  #       --disable-mpg123 \
-  #       --disable-mysofa \
-  #       --disable-ncurses \
-  #       --disable-png \
-  #       --disable-qt \
-  #       --disable-srt \
-  #       --disable-tiff \
-  #       --disable-tiger \
-  #       --disable-tremor \
-  #       --disable-upnp \
-  #       --disable-vncclient \
-  #       --disable-xcb \
-  #       --disable-xcb-proto \
-  #       --disable-xorg-macros \
-  #       --disable-xproto \
-  #       --disable-zlib \
-  #       --disable-zvbi
-  #     make -j$SNAPCRAFT_PARALLEL_BUILD_COUNT fetch
-  #     make -j$SNAPCRAFT_PARALLEL_BUILD_COUNT
-  #     make install
-  #     cd ../../
-  #     ./configure \
-  #       --prefix=$SNAPCRAFT_PART_INSTALL/usr \
-  #       --enable-merge-ffmpeg \
-  #       --disable-a52
-  #     make -j$SNAPCRAFT_PARALLEL_BUILD_COUNT
-  #     make install
-  #   build-packages:
-  #   - ant
-  #   - autoconf
-  #   - automake
-  #   - bison
-  #   - build-essential
-  #   - cmake
-  #   - curl
-  #   - flex
-  #   - g++
-  #   - gettext
-  #   - git
-  #   - libavahi-client-dev
-  #   - libcdio-dev
-  #   - libdbus-1-dev
-  #   - libebml-dev
-  #   - libfreetype6-dev
-  #   - libfribidi-dev
-  #   - libglib2.0-dev
-  #   - libgnutls28-dev
-  #   - libidn11-dev
-  #   - libjack-dev
-  #   - libjpeg8-dev
-  #   - liblircclient-dev
-  #   - liblua5.2-dev
-  #   - libmatroska-dev
-  #   - libmtp-dev
-  #   - libncursesw5-dev
-  #   - libnotify-dev
-  #   - libpng-dev
-  #   - libpulse-dev
-  #   - librsvg2-dev
-  #   - libsecret-1-dev
-  #   - libtool
-  #   - libtool-bin
-  #   - libudev-dev
-  #   - libupnp-dev
-  #   - libv4l-dev
-  #   - libxcb-composite0-dev
-  #   - libxcb-randr0-dev
-  #   - libxcb-shm0-dev
-  #   - libxcb-xfixes0-dev
-  #   - libxcb-xv0-dev
-  #   - libxcb1-dev
-  #   - libxml2-dev
-  #   - lua5.2
-  #   - make
-  #   - pkg-config
-  #   - ragel
-  #   - xz-utils
-  #   - yasm
-  #   - zlib1g-dev
-  #   stage-packages:
-  #   - breeze-icon-theme
-  #   - dbus-x11
-  #   - fonts-freefont-ttf
-  #   - frameworkintegration
-  #   - libcdio13
-  #   - libdbus-1-3
-  #   - libebml4v5
-  #   - libfreetype6
-  #   - libfribidi0
-  #   - libglib2.0-0
-  #   - libgnutls30
-  #   - libidn11
-  #   - libjack0
-  #   - libjpeg8
-  #   - liblircclient0
-  #   - liblua5.2-0
-  #   - libmatroska6v5
-  #   - libmtp9
-  #   - libncursesw5
-  #   - libnotify4
-  #   - libpng12-0
-  #   - libpulse0
-  #   - librsvg2-2
-  #   - libsecret-1-0
-  #   - libupnp6
-  #   - libv4l-0
-  #   - libxcb-composite0
-  #   - libxcb-randr0
-  #   - libxcb-shm0
-  #   - libxcb-xv0
-  #   - libxcb1
-  #   - libxml2
-  #   - zlib1g
+  mycroft-conf:
+    plugin: nil
+    override-pull: |
+      cat <<EOF > mycroft.conf
+      {
+        "enclosure": {
+          "platform": "snap",
+          "update": "false"
+        }
+      }
+      EOF
+    override-build:
+      install -m644 -D -t $SNAPCRAFT_PART_INSTALL/etc/mycroft mycroft.conf
 
   mycroft-deps:
     plugin: nil
