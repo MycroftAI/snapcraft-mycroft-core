@@ -90,8 +90,9 @@ parts:
     source-type: local
     plugin: cmake
     build-packages:
-    - gcc-multilib
-    - g++-multilib
+    - on amd64:
+      - gcc-multilib
+      - g++-multilib
 
   mimic:
     after: [patches]
