@@ -201,7 +201,6 @@ parts:
     after: [mycroft-deps, snapcraft-preload, patches, mimic]
     source: https://github.com/MycroftAI/mycroft-core.git
     source-type: git
-    source-depth: 1
     plugin: dump
     override-pull: |
       snapcraftctl pull
