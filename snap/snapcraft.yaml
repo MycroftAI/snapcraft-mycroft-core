@@ -204,9 +204,8 @@ parts:
     plugin: dump
     override-pull: |
       snapcraftctl pull
-      git checkout $(git describe --tags --abbrev=0 --match release/v*)
-      git describe --tags | sed -e 's|release/v||' > .version
-      snapcraftctl set-version "$(cat .version)"
+      git checkout "$(git describe --tags --abbrev=0 --match release/v*)"
+      snapcraftctl set-version "$(git describe --tags | sed -e 's|release/v||')"
       patch -Np1 -i "$SNAPCRAFT_STAGE/mycroft-cache.diff"
     organize:
       '*': mycroft-source/

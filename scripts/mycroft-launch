@@ -98,7 +98,7 @@ if [ ! -d "$SNAP_USER_COMMON/mycroft-core" ]; then
     fi
 fi
 
-if [ ! -f "$SNAP_USER_COMMON/mycroft-core/.version" ] || [ "$(cat "$SNAP_USER_COMMON/mycroft-core/.version")" != "$(cat "$SNAP/mycroft-source/.version")" ]; then
+if [ ! -f "$SNAP_USER_COMMON/.revision" ] || [ "$(cat "$SNAP_USER_COMMON/.revision")" != "$SNAP_REVISION" ]; then
     cd "$SNAP_USER_COMMON/mycroft-core"
 
     [ -f "$SNAP_USER_COMMON/mycroft-core/.version" ] && ACTION="Updating" || ACTION="Installing"
@@ -155,6 +155,8 @@ if [ ! -f "$SNAP_USER_COMMON/mycroft-core/.version" ] || [ "$(cat "$SNAP_USER_CO
     fi
     cd "$SNAP_USER_COMMON/mycroft-core"
     md5sum requirements.txt test-requirements.txt dev_setup.sh > .installed
+
+    echo "$SNAP_REVISION" > "$SNAP_USER_COMMON/.revision"
 else
     . "$SNAP_USER_COMMON/mycroft-core/.venv/bin/activate"
 fi
