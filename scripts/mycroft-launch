@@ -103,7 +103,7 @@ if [ ! -f "$SNAP_USER_COMMON/.revision" ] || [ "$(cat "$SNAP_USER_COMMON/.revisi
 
     [ -f "$SNAP_USER_COMMON/mycroft-core/.version" ] && ACTION="Updating" || ACTION="Installing"
 
-    rsync -rv --exclude .venv --delete "$SNAP/mycroft-source/" "$SNAP_USER_COMMON/mycroft-core/" | \
+    rsync -rv --delete "$SNAP/mycroft-source/" "$SNAP_USER_COMMON/mycroft-core/" | \
     yad --progress --pulsate --title="Mycroft" --text="$ACTION mycroft" --width=400 --center --no-buttons --auto-close --on-top --no-escape
 
     python3 -m venv "$SNAP_USER_COMMON/mycroft-core/.venv" --without-pip
@@ -118,7 +118,7 @@ if [ ! -f "$SNAP_USER_COMMON/.revision" ] || [ "$(cat "$SNAP_USER_COMMON/.revisi
     "$SNAP_USER_COMMON/mycroft-core/.venv/bin/python3" $TMPDIR/get-pip.py | \
     yad --progress --pulsate --title="Mycroft" --text="Installing Python PIP" --width=400 --center --no-buttons --auto-close --on-top --no-escape
 
-    sed -i 's|^def rmtree(dir, ignore_errors=False):|def rmtree(dir, ignore_errors=True):|' "$SNAP_USER_COMMON/mycroft-core/.venv/lib/python3.6/site-packages/pip/_internal/utils/misc.py"
+    sed -i 's|^def rmtree(dir, ignore_errors=False):|def rmtree(dir, ignore_errors=True):|' "$SNAP_USER_COMMON"/mycroft-core/.venv/lib/python3.?/site-packages/pip/_internal/utils/misc.py
 
     . "$SNAP_USER_COMMON/mycroft-core/.venv/bin/activate"
 
