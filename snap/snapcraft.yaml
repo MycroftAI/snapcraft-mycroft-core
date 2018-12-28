@@ -17,18 +17,8 @@ base: core18
 
 passthrough:
   layout:
-    /usr/lib/x86_64-linux-gnu/alsa-lib:
-      symlink: $SNAP/usr/lib/x86_64-linux-gnu/alsa-lib
-    /usr/lib/i386-linux-gnu/alsa-lib:
-      symlink: $SNAP/usr/lib/i386-linux-gnu/alsa-lib
-    /usr/lib/arm-linux-gnueabihf/alsa-lib:
-      symlink: $SNAP/usr/lib/arm-linux-gnueabihf/alsa-lib
-    /usr/lib/aarch64-linux-gnu/alsa-lib:
-      symlink: $SNAP/usr/lib/aarch64-linux-gnu/alsa-lib
-    /usr/lib/powerpc-linux-gnu/alsa-lib:
-      symlink: $SNAP/usr/lib/powerpc-linux-gnu/alsa-lib
-    /usr/lib/s390x-linux-gnu/alsa-lib:
-      symlink: $SNAP/usr/lib/s390x-linux-gnu/alsa-lib
+    /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib:
+      symlink: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
     /usr/local/lib:
       symlink: $SNAP/usr/lib
     /usr/include:
