@@ -84,10 +84,9 @@ parts:
       mycroft.png: usr/share/icons/mycroft.png
 
   snapcraft-preload:
-    # Until sergiusens/snapcraft-preload#29 is merged we will keep this local
-    #source: https://github.com/sergiusens/snapcraft-preload.git
-    source: snapcraft-preload
-    source-type: local
+    # Until sergiusens/snapcraft-preload#29 is merged
+    source: https://github.com/diddledan/snapcraft-preload.git
+    source-branch: semaphore-support
     plugin: cmake
     build-packages:
     - on amd64:
