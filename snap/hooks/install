@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -e
+
+if [ "$SNAP_ARCH" == "amd64" ]; then
+  ARCH="x86_64-linux-gnu"
+elif [ "$SNAP_ARCH" == "armhf" ]; then
+  ARCH="arm-linux-gnueabihf"
+elif [ "$SNAP_ARCH" == "arm64" ]; then
+  ARCH="aarch64-linux-gnu"
+else
+  ARCH="$SNAP_ARCH-linux-gnu"
+fi
+
+export CFLAGS="-I$SNAP/include/$ARCH -I$SNAP/include"
+export CXXFLAGS="$CFLAGS"
+export LDFLAGS="-L$SNAP/usr/lib -L$SNAP/usr/lib/$ARCH -L$SNAP/lib -L$SNAP/lib/$ARCH"
+# export SWIG_LIB="$SNAP/usr/share/swig3.0"
+export LD_LIBRARY_PATH="$SNAP/usr/lib/$ARCH:/usr/lib/$ARCH:$SNAP/usr/lib:/usr/lib:$SNAP/lib/$ARCH:/lib/$ARCH:$SNAP/lib:/lib"
+export PATH="$SNAP/usr/bin:/usr/bin:$SNAP/bin:/bin:$SNAP/usr/sbin:/usr/sbin:$SNAP/sbin:/sbin"
+export TERM=dumb
+
+rsync -rvq "$SNAP/opt/mycroft/" "/opt/mycroft/"
+mkdir -p /opt/mycroft/skills
+mkdir -p /opt/mycroft/scripts/logs
+touch /opt/mycroft/scripts/logs/mycroft-bus.log
+touch /opt/mycroft/scripts/logs/mycroft-voice.log
+touch /opt/mycroft/scripts/logs/mycroft-skills.log
+touch /opt/mycroft/scripts/logs/mycroft-audio.log
+cat <<EOF > /opt/mycroft/.dev_opts.json
+{ "use_branch": "master", "auto_update": "true" }
+EOF
+/opt/mycroft/./dev_setup.sh --allow-root -sm

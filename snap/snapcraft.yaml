@@ -15,47 +15,90 @@ grade: stable
 confinement: strict
 base: core18
 
-passthrough:
-  layout:
-    /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib:
-      symlink: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
-    /usr/local/lib:
-      symlink: $SNAP/usr/lib
-    /usr/include:
-      bind: $SNAP/usr/include
-    /usr/share/alsa/alsa.conf:
-      symlink: $SNAP/etc/asound.conf
-    /etc/mycroft/mycroft.conf:
-      symlink: $SNAP/etc/mycroft/mycroft.conf
+layout:
+  /etc/fonts/conf.d:
+    bind: $SNAP/etc/fonts/conf.d
+  /etc/mycroft/mycroft.conf:
+    bind-file: $SNAP/etc/mycroft/mycroft.conf
+  /usr/include:
+    bind: $SNAP/usr/include
+  /usr/share/swig3.0:
+    bind: $SNAP/usr/share/swig3.0
+  /usr/lib/git-core:
+    bind: $SNAP/usr/lib/git-core
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0/2.10.0/loaders:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0/2.10.0/loaders
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/mpg123:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/mpg123
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/vlc:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/vlc
+  /usr/share/swig3.0:
+    bind: $SNAP/usr/share/swig3.0
+  /opt/mycroft:
+    bind: $SNAP_COMMON/mycroft
+
+hooks:
+  install:
+    plugs: [network]
+  post-refresh:
+    plugs: [network]
+
+environment:
+  PYTHONPATH: "$SNAP/lib:$SNAP/usr/lib"
+
+apps:
+  mycroft:
+    command: mycroft-launch
+    plugs:
+    - alsa
+    - mount-observe
+    - network
+    - network-bind
+    - pulseaudio
+
+  mycroftd:
+    command: mycroft-launch
+    daemon: simple
+    plugs:
+    - alsa
+    - mount-observe
+    - network
+    - network-bind
+    - pulseaudio
 
 parts:
   alsa:
-    # after: [alsa-lib, alsa-plugins]
     plugin: nil
     source: https://github.com/diddledan/snapcraft-alsa.git
-    override-pull: |
-      cat > asound.conf <<EOF
-      pcm.!default {
-        type pulse
-        fallback "sysdefault"
-        hint {
-          show on
-          description "Default ALSA Output (currently PulseAudio Sound Server)"
-        }
-      }
-      ctl.!default {
-        type pulse
-        fallback "sysdefault"
-      }
-      EOF
-    override-build: |
-      snapcraftctl build
-      install -m644 -D -t $SNAPCRAFT_PART_INSTALL/etc asound.conf
+    # override-pull: |
+    #   cat > asound.conf <<EOF
+    #   pcm.!default {
+    #     type pulse
+    #     fallback "sysdefault"
+    #     hint {
+    #       show on
+    #       description "Default ALSA Output (currently PulseAudio Sound Server)"
+    #     }
+    #   }
+    #   ctl.!default {
+    #     type pulse
+    #     fallback "sysdefault"
+    #   }
+    #   EOF
+    # override-build: |
+    #   install -m644 -D -t $SNAPCRAFT_PART_INSTALL/etc asound.conf
+    stage-packages:
+    - libasound2
+    - libasound2-plugins
+    - libjack0
+    - libpulse0
 
-  patches:
-    source: patches
-    plugin: dump
-    prime: [msm-skillsdir.diff]
+  # patches:
+  #   source: patches
+  #   plugin: dump
+  #   prime: [msm-skillsdir.diff]
 
   scripts:
     source: scripts
@@ -79,37 +122,40 @@ parts:
     source-branch: semaphore-support
     plugin: cmake
     build-packages:
-    - on amd64:
+    - try:
       - gcc-multilib
       - g++-multilib
-
-  mimic:
-    after: [patches]
-    plugin: autotools
-    source: https://github.com/MycroftAI/mimic.git
-    source-type: git
-    source-depth: 1
-    configflags:
-    - --prefix=/usr
-    - --disable-static
-    - --with-audio=pulseaudio
-    override-pull: |
-      snapcraftctl pull
-      patch -Np1 < $SNAPCRAFT_STAGE/mimic-pulseaudio.diff
-    build-packages:
-    - libpcre2-dev
-    - libpulse-dev
     stage-packages:
-    - libpcre2-8-0
-    - libpulse0
-    prime:
-    - usr/bin
-    - usr/include
-    - usr/lib
-    - -usr/lib/*.a
-    - -usr/lib/*.la
-    - -usr/lib/pkgconfig
-    - usr/share/mimic
+    - try:
+      - lib32stdc++6
+
+  # mimic:
+  #   after: [patches]
+  #   plugin: autotools
+  #   source: https://github.com/MycroftAI/mimic.git
+  #   source-type: git
+  #   source-depth: 1
+  #   configflags:
+  #   - --prefix=/usr
+  #   - --disable-static
+  #   - --with-audio=pulseaudio
+  #   override-pull: |
+  #     snapcraftctl pull
+  #     patch -Np1 < $SNAPCRAFT_STAGE/mimic-pulseaudio.diff
+  #   build-packages:
+  #   - libpcre2-dev
+  #   - libpulse-dev
+  #   stage-packages:
+  #   - libpcre2-8-0
+  #   - libpulse0
+  #   prime:
+  #   - usr/bin
+  #   - usr/include
+  #   - usr/lib
+  #   - -usr/lib/*.a
+  #   - -usr/lib/*.la
+  #   - -usr/lib/pkgconfig
+  #   - usr/share/mimic
 
   mycroft-conf:
     plugin: nil
@@ -118,7 +164,7 @@ parts:
       {
         "enclosure": {
           "platform": "snap",
-          "update": "false"
+          "update": "true"
         }
       }
       EOF
@@ -135,7 +181,6 @@ parts:
         $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libm.so
       sed -i -E 's|(/usr/lib/x86_64-linux-gnu/libpthread_nonshared.a)|/snap/mycroft/current/\1|' \
         $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpthread.so
-      # sed -i -E -s 's|^prefix=/root/stage/usr|prefix=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr|' $SNAPCRAFT_STAGE/usr/lib/*/pkgconfig/*.pc
     organize:
       usr/lib/*/*fann*.so*: usr/lib/
       usr/bin/mpg123.bin: usr/bin/mpg123
@@ -187,21 +232,53 @@ parts:
     - zlib1g
 
   mycroft:
-    after: [mycroft-deps, snapcraft-preload, patches, mimic]
+    after: [snapcraft-preload]
     source: https://github.com/MycroftAI/mycroft-core.git
     source-type: git
-    plugin: dump
+    plugin: nil
     override-pull: |
       snapcraftctl pull
       git checkout "$(git describe --tags --abbrev=0 --match release/v*)"
       snapcraftctl set-version "$(git describe --tags | sed -e 's|release/v||')"
-      patch -Np1 -i "$SNAPCRAFT_STAGE/mycroft-cache.diff"
-    organize:
-      '*': mycroft-source/
-      '.*.yml': mycroft-source/
-      .gitignore: mycroft-source/
-      .gitmessage: mycroft-source/
-      .version: mycroft-source/
+      # patch -Np1 -i "$SNAPCRAFT_STAGE/mycroft-cache.diff"
+    override-build: |
+      mkdir -p $SNAPCRAFT_PART_INSTALL/opt/mycroft
+      rsync -a ./ $SNAPCRAFT_PART_INSTALL/opt/mycroft/
+    stage-packages:
+    - libgdk-pixbuf2.0-0 # yad
+    - libgtk-3-0         # yad
+    - libfreetype6       # yad
+    - libfontconfig1     # yad
+    - libnotify4         # yad
+    - yad
+    - autoconf
+    - automake
+    - bison
+    - build-essential
+    - curl
+    - flac
+    - git
+    - jq
+    - libfann-dev
+    - libffi-dev
+    - libglib2.0-dev
+    - libicu-dev
+    - libjpeg-dev
+    - libssl-dev
+    - libtool
+    - mpg123
+    - pkg-config
+    - portaudio19-dev
+    - python-gobject-2-dev
+    - python-setuptools
+    - python3
+    - python3-dev
+    - screen
+    - swig
+    prime:
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libc.so
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libm.so
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpthread.so
 
   # mycroft-plasma:
   #   after: [desktop-qt5]
@@ -215,75 +292,3 @@ parts:
   #   override-build: |
   #     snapcraftctl build
   #     chmod +x usr/share/plasma/plasmoids/org.kde.plasma.mycroftplasmoid/contents/code/*service.sh
-
-apps:
-  mycroft:
-    command: mycroft-launch start-all
-    plugs:
-    - desktop
-    - desktop-legacy
-    - mount-observe
-    - network
-    - network-bind
-    - pulseaudio
-    - x11
-    - wayland
-
-  msm:
-    command: mycroft-launch msm
-    plugs:
-    - desktop
-    - desktop-legacy
-    - network
-    - pulseaudio
-    - x11
-    - wayland
-
-  cli:
-    command: mycroft-launch client.text
-    plugs:
-    - desktop
-    - desktop-legacy
-    - network
-    - x11
-    - wayland
-
-  bus:
-    command: mycroft-launch messagebus.service
-    plugs:
-    - desktop
-    - desktop-legacy
-    - network
-    - network-bind
-    - x11
-    - wayland
-
-  skills:
-    command: mycroft-launch skills
-    plugs:
-    - desktop
-    - desktop-legacy
-    - mount-observe
-    - network
-    - x11
-    - wayland
-
-  audio:
-    command: mycroft-launch audio
-    plugs:
-    - desktop
-    - desktop-legacy
-    - network
-    - pulseaudio
-    - x11
-    - wayland
-
-  speech:
-    command: mycroft-launch client.speech
-    plugs:
-    - desktop
-    - desktop-legacy
-    - network
-    - pulseaudio
-    - x11
-    - wayland
