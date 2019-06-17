@@ -22,8 +22,10 @@ layout:
     bind-file: $SNAP/etc/mycroft/mycroft.conf
   /usr/include:
     bind: $SNAP/usr/include
-  /usr/share/swig3.0:
-    bind: $SNAP/usr/share/swig3.0
+  /usr/bin/aclocal:
+    bind-file: $SNAP/usr/bin/aclocal
+  /usr/bin/sudo:
+    bind-file: $SNAP/usr/bin/sudo
   /usr/lib/git-core:
     bind: $SNAP/usr/lib/git-core
   /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0/2.10.0/loaders:
@@ -34,6 +36,14 @@ layout:
     bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
   /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/vlc:
     bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/vlc
+  /usr/share/aclocal:
+    bind: $SNAP/usr/share/aclocal
+  /usr/share/git-core:
+    bind: $SNAP/usr/share/git-core
+  /usr/share/libtool/build-aux:
+    bind: $SNAP/usr/share/libtool/build-aux
+  /usr/share/perl5:
+    bind: $SNAP/usr/share/perl5
   /usr/share/swig3.0:
     bind: $SNAP/usr/share/swig3.0
   /opt/mycroft:
@@ -106,8 +116,10 @@ parts:
     plugin: dump
     organize:
       mycroft-launch: bin/mycroft-launch
+      sudo: usr/bin/sudo
     stage:
     - bin/mycroft-launch
+    - usr/bin/sudo
 
   desktop:
     source: desktop
