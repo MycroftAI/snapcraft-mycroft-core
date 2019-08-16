@@ -267,7 +267,8 @@ parts:
     after:
     - alsa-mixin
     - snapcraft-preload
-    build-packages: []
+    build-packages:
+    - rsync
     override-build: '
 
       mkdir -p $SNAPCRAFT_PART_INSTALL/mycroft-source

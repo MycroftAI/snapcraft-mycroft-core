@@ -20,6 +20,7 @@ EOF
 mkdir -p $SNAPCRAFT_PART_INSTALL/mycroft-source
 rsync -a --exclude .git ./ $SNAPCRAFT_PART_INSTALL/mycroft-source/
 ",
+        "build-packages": ["rsync"],
     },
 
     "mycroft-conf": {
