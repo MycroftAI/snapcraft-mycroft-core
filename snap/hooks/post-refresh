@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e
 
-if [ ! -d "/opt/mycroft/mycroft" ]; then
-    "$(dirname "$0")/install"
+if [ ! -d "$SNAP_COMMON/vartmp" ]; then
+    mkdir -m1777 "$SNAP_COMMON/vartmp"
 fi

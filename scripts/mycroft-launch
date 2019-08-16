@@ -1,41 +1,91 @@
 #!/bin/bash
 
-function prepend_dir() {
-  local var="$1"
-  local dir="$2"
-  if [ -d "$dir" ]; then
-    eval "export $var=\"\$dir\${$var:+:\$$var}\""
-  fi
-}
+needs_update=true
 
-function append_dir() {
-  local var="$1"
-  local dir="$2"
-  if [ -d "$dir" ]; then
-    eval "export $var=\"\${$var:+\$$var:}\$dir\""
-  fi
-}
-
-if [ "$SNAP_ARCH" == "amd64" ]; then
-  ARCH="x86_64-linux-gnu"
-elif [ "$SNAP_ARCH" == "armhf" ]; then
-  ARCH="arm-linux-gnueabihf"
-elif [ "$SNAP_ARCH" == "arm64" ]; then
-  ARCH="aarch64-linux-gnu"
-else
-  ARCH="$SNAP_ARCH-linux-gnu"
+. "$SNAP_USER_DATA/.mycroft_revision" 2>/dev/null || true
+if [ "$MYCROFT_LAST_REVISION" = "$SNAP_REVISION" ]; then
+    needs_update=false
 fi
 
-append_dir LOCPATH "$SNAP/usr/lib/locale"
+if [ ! -d "$SNAP_USER_COMMON/mycroft-core" ]; then
+    if [ -d "$SNAP_USER_COMMON/mycroft" ]; then
+        mv "$SNAP_USER_COMMON/mycroft" "$SNAP_USER_COMMON/mycroft-core"
+    else
+        mkdir -p "$SNAP_USER_COMMON/mycroft-core"
+    fi
+fi
 
-# export CFLAGS="-I$SNAP/usr/include/$ARCH -I$SNAP/usr/include -I$SNAP/include/$ARCH -I$SNAP/include"
-# export CXXFLAGS="$CFLAGS"
-export LDFLAGS="-L$SNAP/usr/lib -L$SNAP/usr/lib/$ARCH -L$SNAP/lib -L$SNAP/lib/$ARCH"
-# export SWIG_LIB="$SNAP/usr/share/swig3.0"
+if [ $needs_update = true ]; then
+    cd "$SNAP_USER_COMMON/mycroft-core"
 
-source "/opt/mycroft/.venv/bin/activate"
+    [ -f "$SNAP_USER_COMMON/mycroft-core/.version" ] && ACTION="Updating" || ACTION="Installing"
 
-CMD="$1"; shift;
-[ -z "$CMD" ] && CMD="all"
+    rsync -rv --delete "$SNAP/mycroft-source/" "$SNAP_USER_COMMON/mycroft-core/" | \
+    yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --text="$ACTION mycroft" --width=400 --center --no-buttons --auto-close --on-top --no-escape
 
-snapcraft-preload /opt/mycroft/start-mycroft.sh "$CMD" "$@"
+    python3 -m venv "$SNAP_USER_COMMON/mycroft-core/.venv" --without-pip
+    ln -sf "$(dirname "$SNAP")/current/usr/bin/python3" "$SNAP_USER_COMMON/mycroft-core/.venv/bin/python3"
+
+    curl -o "$TMPDIR/get-pip.py" https://bootstrap.pypa.io/get-pip.py 2>&1 | \
+    stdbuf -oL tr '\r' '\n' | \
+    sed -u -E 's/^ *([0-9][0-9]*).*( [0-9].*$)/\1\n#Downloading Python PIP(\2)/' | \
+    yad --progress --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --width=400 --center --no-buttons --auto-close --on-top --no-escape
+    
+    "$SNAP_USER_COMMON/mycroft-core/.venv/bin/python3" "$TMPDIR/get-pip.py" | \
+    yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --text="Installing Python PIP" --width=400 --center --no-buttons --auto-close --on-top --no-escape
+
+    sed -i 's|^def rmtree(dir, ignore_errors=False):|def rmtree(dir, ignore_errors=True):|' "$SNAP_USER_COMMON"/mycroft-core/.venv/lib/python3.?/site-packages/pip/_internal/utils/misc.py
+
+    . "$SNAP_USER_COMMON/mycroft-core/.venv/bin/activate"
+
+    PYTHON=$( python3 -c "import sys;print('python{}.{}'.format(sys.version_info[0], sys.version_info[1]))" )
+
+    # Add mycroft-core to the virtualenv path
+    # (This is equivalent to typing 'add2virtualenv $TOP', except
+    # you can't invoke that shell function from inside a script)
+    VENV_PATH_FILE="$SNAP_USER_COMMON/mycroft-core/.venv/lib/$PYTHON/site-packages/_virtualenv_path_extensions.pth"
+    if [ ! -f "$VENV_PATH_FILE" ] ; then
+        echo "import sys; sys.__plen = len(sys.path)" > "$VENV_PATH_FILE" || return 1
+        echo "import sys; new=sys.path[sys.__plen:]; del sys.path[sys.__plen:]; p=getattr(sys,'__egginsert',0); sys.path[p:p]=new; sys.__egginsert = p+len(new)" >> "$VENV_PATH_FILE" || return 1
+    fi
+
+    if ! grep -q "$SNAP_USER_COMMON/mycroft-core" $VENV_PATH_FILE; then
+        if grep -q "$SNAP_USER_COMMON/mycroft" $VENV_PATH_FILE; then
+            echo "Swapping mycroft path to mycroft-core in virtualenv"
+            sed -i.tmp "s|$SNAP_USER_COMMON/mycroft|$SNAP_USER_COMMON/mycroft-core|" "$VENV_PATH_FILE"
+        else
+            echo "Adding mycroft-core to virtualenv path"
+            sed -i.tmp '1 a\
+'"$SNAP_USER_COMMON/mycroft-core"'
+' "${VENV_PATH_FILE}"
+        fi
+    fi
+
+    pip install -r requirements.txt | \
+    stdbuf -oL tr '\r' '\n' | \
+    yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --text="Installing Mycroft dependencies" --width=400 --center --no-buttons --auto-close --on-top --no-escape
+    
+    cd "$SNAP_USER_COMMON/mycroft-core"
+    md5sum requirements.txt test-requirements.txt dev_setup.sh > .installed
+
+    echo "$SNAP_REVISION" > "$SNAP_USER_COMMON/.revision"
+else
+    . "$SNAP_USER_COMMON/mycroft-core/.venv/bin/activate"
+fi
+
+cd "$SNAP_USER_COMMON/mycroft-core"
+
+if [ ! -d "$SNAP_USER_COMMON/logs" ]; then
+    mkdir -p "$SNAP_USER_COMMON/logs"
+fi
+
+CMD="all"
+if [ -n "$1" ]; then
+  CMD="$1";shift
+fi
+
+if [ $needs_update = true ]; then
+    echo "MYCROFT_LAST_REVISION=$SNAP_REVISION" > "$SNAP_USER_DATA/.mycroft_revision"
+fi
+
+exec "$SNAP/bin/snapcraft-preload" "$SNAP_USER_COMMON/mycroft-core/start-mycroft.sh" "$CMD" "$@"

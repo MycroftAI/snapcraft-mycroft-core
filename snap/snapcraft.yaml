@@ -1,212 +1,469 @@
-name: mycroft
-summary: Your AI personal assistant!
-description: >
-  Mycroft is a free and open-source intelligent personal assistant and knowledge
+adopt-info: mycroft
+apps:
+  mycroft:
+    command: bin/desktop-launch $SNAP/bin/mycroft-launch
+    command-chain:
+    - snap/command-chain/alsa-launch
+    desktop: usr/share/applications/mycroft.desktop
+    plugs:
+    - gnome-3-28-1804
+    - gtk-3-themes
+    - icon-themes
+    - pulseaudio
+    - sound-themes
+    - desktop
+    - desktop-legacy
+    - mount-observe
+    - network
+    - network-bind
+    - unity7
+    - wayland
+    - x11
+base: core18
+confinement: strict
+description: 'Mycroft is a free and open-source intelligent personal assistant and
+  knowledge
+
   navigator for Linux-based operating systems that uses a natural language user
-  interface. It is the world’s first fully open-source AI voice assistant.
+
+  interface. It is the world''s first fully open-source AI voice assistant.
+
 
   Mycroft is named after a fictional computer from 1966 science fiction novel
+
   "The Moon Is a Harsh Mistress".
 
-  Installing skills by voice seems to be broken for now, but you can use
-  the `mycroft.msm` command to list, install, and remove skills.
-adopt-info: mycroft
-grade: stable
-confinement: strict
-base: core18
 
+  Installing skills by voice seems to be broken for now, but you can use
+
+  the `mycroft.msm` command to list, install, and remove skills.'
+grade: stable
 layout:
-  /etc/fonts/conf.d:
-    bind: $SNAP/etc/fonts/conf.d
   /etc/mycroft/mycroft.conf:
     bind-file: $SNAP/etc/mycroft/mycroft.conf
   /usr/include:
     bind: $SNAP/usr/include
-  /usr/bin/aclocal:
-    bind-file: $SNAP/usr/bin/aclocal
-  /usr/bin/sudo:
-    bind-file: $SNAP/usr/bin/sudo
-  /usr/lib/git-core:
-    bind: $SNAP/usr/lib/git-core
-  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0/2.10.0/loaders:
-    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0/2.10.0/loaders
-  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/mpg123:
-    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/mpg123
-  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio:
-    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
-  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/vlc:
-    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/vlc
-  /usr/share/aclocal:
-    bind: $SNAP/usr/share/aclocal
-  /usr/share/git-core:
-    bind: $SNAP/usr/share/git-core
-  /usr/share/libtool/build-aux:
-    bind: $SNAP/usr/share/libtool/build-aux
-  /usr/share/perl5:
-    bind: $SNAP/usr/share/perl5
-  /usr/share/swig3.0:
-    bind: $SNAP/usr/share/swig3.0
-  /opt/mycroft:
-    bind: $SNAP_COMMON/mycroft
-
-hooks:
-  install:
-    plugs: [network]
-  post-refresh:
-    plugs: [network]
-
-environment:
-  PYTHONPATH: "$SNAP/lib:$SNAP/usr/lib"
-
-apps:
-  mycroft:
-    command: mycroft-launch
-    plugs:
-    - alsa
-    - mount-observe
-    - network
-    - network-bind
-    - pulseaudio
-
-  mycroftd:
-    command: mycroft-launch
-    daemon: simple
-    plugs:
-    - alsa
-    - mount-observe
-    - network
-    - network-bind
-    - pulseaudio
-
+  /var/tmp:
+    bind: $SNAP_COMMON/vartmp
+name: mycroft
 parts:
-  alsa:
+  alsa-mixin:
+    after: []
+    build-packages:
+    - libasound2-dev
+    override-build: '
+
+      install -m644 -D -t $SNAPCRAFT_PART_INSTALL/etc asound.conf
+
+      install -m755 -D -t $SNAPCRAFT_PART_INSTALL/snap/command-chain alsa-launch
+
+      '
+    override-pull: "\ncat > asound.conf <<EOF\npcm.!default {\n    type pulse\n  \
+      \  fallback \"sysdefault\"\n    hint {\n        show on\n        description\
+      \ \"Default ALSA Output (currently PulseAudio Sound Server)\"\n    }\n}\nctl.!default\
+      \ {\n    type pulse\n    fallback \"sysdefault\"\n}\nEOF\ncat > alsa-launch\
+      \ <<EOF\n#!/bin/bash\n\nfunction append_dir() {\n  local var=\"\\$1\"\n  local\
+      \ dir=\"\\$2\"\n  if [ -d \"\\$dir\" ]; then\n    eval \"export \\$var=\\\"\\\
+      \\$dir\\${\\$var:+:\\\\$\\$var}\\\"\"\n  fi\n}\n\nexport ALSA_CONFIG_PATH=\"\
+      $SNAP/etc/asound.conf\"\n\nif [ -d \"\\$SNAP/usr/lib/alsa-lib\" ]; then\n  \
+      \  append_dir LD_LIBRARY_PATH \"\\$SNAP/usr/lib/alsa-lib\"\nelif [ -d \"\\$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib\"\
+      \ ]; then\n    append_dir LD_LIBRARY_PATH \"\\$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib\"\
+      \nfi\nappend_dir LD_LIBRARY_PATH \"\\$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio\"\
+      \n\n# Make PulseAudio socket available inside the snap-specific $XDG_RUNTIME_DIR\n\
+      if [ -n \"\\$XDG_RUNTIME_DIR\" ]; then\n    pulsenative=\"pulse/native\"\n \
+      \   pulseaudio_sockpath=\"\\$XDG_RUNTIME_DIR/../\\$pulsenative\"\n    if [ -S\
+      \ \"\\$pulseaudio_sockpath\" ]; then\n        export PULSE_SERVER=\"unix:\\\
+      ${pulseaudio_sockpath}\"\n    fi\nfi\n\nexec \"\\$@\"\nEOF\nchmod +x alsa-launch\n"
     plugin: nil
     source: https://github.com/diddledan/snapcraft-alsa.git
-    # override-pull: |
-    #   cat > asound.conf <<EOF
-    #   pcm.!default {
-    #     type pulse
-    #     fallback "sysdefault"
-    #     hint {
-    #       show on
-    #       description "Default ALSA Output (currently PulseAudio Sound Server)"
-    #     }
-    #   }
-    #   ctl.!default {
-    #     type pulse
-    #     fallback "sysdefault"
-    #   }
-    #   EOF
-    # override-build: |
-    #   install -m644 -D -t $SNAPCRAFT_PART_INSTALL/etc asound.conf
     stage-packages:
     - libasound2
     - libasound2-plugins
-    - libjack0
-    - libpulse0
-
-  # patches:
-  #   source: patches
-  #   plugin: dump
-  #   prime: [msm-skillsdir.diff]
-
-  scripts:
-    source: scripts
-    source-type: local
-    plugin: dump
-    organize:
-      mycroft-launch: bin/mycroft-launch
-      sudo: usr/bin/sudo
-    stage:
-    - bin/mycroft-launch
-    - usr/bin/sudo
-
-  desktop:
-    source: desktop
-    plugin: dump
+  desktop-file:
+    after:
+    - alsa-mixin
+    build-packages: []
     organize:
       mycroft.desktop: usr/share/applications/mycroft.desktop
       mycroft.png: usr/share/icons/mycroft.png
-
-  snapcraft-preload:
-    # Until sergiusens/snapcraft-preload#29 is merged
-    source: https://github.com/diddledan/snapcraft-preload.git
-    source-branch: semaphore-support
-    plugin: cmake
+    plugin: dump
+    source: desktop
+    stage:
+    - -usr/share/alsa
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libasound*
+    stage-packages: []
+  desktop-gnome-platform:
+    after:
+    - alsa-mixin
     build-packages:
-    - try:
-      - gcc-multilib
-      - g++-multilib
+    - gcc
+    make-parameters:
+    - FLAVOR=gtk3
+    override-build: '
+
+      snapcraftctl build
+
+      mkdir -pv $SNAPCRAFT_PART_INSTALL/gnome-platform
+
+      mkdir -pv $SNAPCRAFT_PART_INSTALL/data-dir
+
+      '
+    plugin: make
+    source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
+    source-subdir: gtk
+    stage:
+    - -usr/share/alsa
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libasound*
+    stage-packages: []
+  mimic:
+    after:
+    - alsa-mixin
+    - snapcraft-preload
+    build-packages:
+    - libpcre2-dev
+    - portaudio19-dev
+    configflags:
+    - --prefix=/usr
+    - --disable-static
+    - --with-audio=alsa
+    plugin: autotools
+    prime:
+    - usr/bin
+    - usr/include
+    - usr/lib
+    - -usr/lib/*.a
+    - -usr/lib/*.la
+    - -usr/lib/pkgconfig
+    - usr/share/mimic
+    source: https://github.com/MycroftAI/mimic.git
+    source-depth: 1
+    source-type: git
+    stage:
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/avahi
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/dri
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gio
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/girepository-1.0
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/glib-2.0
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gtk-3.0
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/krb5
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libasn1*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libasyncns*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libatk*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libatspi*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libavahi*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libcairo*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libcolord*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libcroco*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libcrypto*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libcups*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libcurl-gnutls*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libdatrie*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libdconf*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libdrm*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libedit*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libEGL*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libelf*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libepoxy*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libevdev*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libexpatw*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libffi*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libFLAC*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libfontconfig*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libfreetype*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgbm*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgdk*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgio*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgirepository*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libGL*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libglapi*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libglib-2.0*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgmodule-2.0*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgmp*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgnutls*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgobject-2.0*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgraphite2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgssapi*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgthread-2.0*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgtk-3*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgudev-1.0*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libharfbuzz*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libhcrypto*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libheim*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libhogweed*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libhx509*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libICE*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libicu*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libidn2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libinput*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libjack*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libjbig*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libjpeg*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libjson-glib-1.0*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libk5crypto*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libkrb5*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/liblber-2.4*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/liblcms2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libldap*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libLLVM*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libmpc*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libmpdec*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libmpfr*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libmtdev*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libnettle*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libnghttp2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libnotify*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libogg*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libp11-kit*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpango*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpciaccess*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpixman-1*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpng*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libproxy*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpsl*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpulse*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpython3.6m*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/librest-0.7*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libroken*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/librsvg-2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/librtmp*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsamplerate*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsasl2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsecret-1*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsensors*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libSM*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsndfile*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsoup*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libspeexdsp*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsqlite3*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libssh2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libssl*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libtasn1*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libtdb*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libthai*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libtiff*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libunistring*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libvorbis*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libwacom*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libwayland*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libwebp*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libwind*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libxcb*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libX*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libxkbcommon*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libxml2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libxshmfence
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/sasl2
+    - -usr/share/alsa
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libasound*
     stage-packages:
-    - try:
-      - lib32stdc++6
+    - libpcre2-8-0
+    - libportaudio2
+  mycroft:
+    after:
+    - alsa-mixin
+    - snapcraft-preload
+    build-packages: []
+    override-build: '
 
-  # mimic:
-  #   after: [patches]
-  #   plugin: autotools
-  #   source: https://github.com/MycroftAI/mimic.git
-  #   source-type: git
-  #   source-depth: 1
-  #   configflags:
-  #   - --prefix=/usr
-  #   - --disable-static
-  #   - --with-audio=pulseaudio
-  #   override-pull: |
-  #     snapcraftctl pull
-  #     patch -Np1 < $SNAPCRAFT_STAGE/mimic-pulseaudio.diff
-  #   build-packages:
-  #   - libpcre2-dev
-  #   - libpulse-dev
-  #   stage-packages:
-  #   - libpcre2-8-0
-  #   - libpulse0
-  #   prime:
-  #   - usr/bin
-  #   - usr/include
-  #   - usr/lib
-  #   - -usr/lib/*.a
-  #   - -usr/lib/*.la
-  #   - -usr/lib/pkgconfig
-  #   - usr/share/mimic
+      mkdir -p $SNAPCRAFT_PART_INSTALL/mycroft-source
 
-  mycroft-conf:
-    plugin: nil
-    override-pull: |
-      cat <<EOF > mycroft.conf
-      {
-        "enclosure": {
-          "platform": "snap",
-          "update": "true"
-        }
-      }
+      rsync -a --exclude .git ./ $SNAPCRAFT_PART_INSTALL/mycroft-source/
+
+      '
+    override-pull: '
+
+      snapcraftctl pull
+
+      git checkout "$(git describe --tags --abbrev=0 --match release/v*)"
+
+      snapcraftctl set-version "$(git describe --tags | sed -e ''s|release/v||'')"
+
+      sed -i ''s|/var/log/mycroft|$SNAP_USER_COMMON/logs|g'' start-mycroft.sh
+
+      cat > scripts/prepare-msm.sh <<EOF
+
+      #!/bin/sh
+
+      true
+
       EOF
-    override-build:
+
+      '
+    plugin: nil
+    source: https://github.com/MycroftAI/mycroft-core.git
+    source-type: git
+    stage:
+    - -usr/share/alsa
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libasound*
+    stage-packages: []
+  mycroft-conf:
+    after:
+    - alsa-mixin
+    build-packages: []
+    override-build: '
+
       install -m644 -D -t $SNAPCRAFT_PART_INSTALL/etc/mycroft mycroft.conf
 
-  mycroft-deps:
+      '
+    override-pull: "\ncat  > mycroft.conf <<EOF\n{\n    \"enclosure\": {\n       \
+      \ \"update\": \"false\"\n    },\n    \"data_dir\": \"~/snap/mycroft/common/mycroft-data\"\
+      ,\n    \"log_dir\": \"~/snap/mycroft/common/logs\"\n}\nEOF\n"
     plugin: nil
-    override-stage: |
-      snapcraftctl stage
-      sed -i -E 's|(/usr/lib/x86_64-linux-gnu/libc_nonshared.a)|/snap/mycroft/current/\1|' \
-        $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libc.so
-      sed -i -E 's|(/usr/lib/x86_64-linux-gnu/libmvec_nonshared.a)|/snap/mycroft/current/\1|' \
-        $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libm.so
-      sed -i -E 's|(/usr/lib/x86_64-linux-gnu/libpthread_nonshared.a)|/snap/mycroft/current/\1|' \
-        $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpthread.so
+    stage:
+    - -usr/share/alsa
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libasound*
+    stage-packages: []
+  mycroft-deps:
+    after:
+    - alsa-mixin
+    - mimic
+    - snapcraft-preload
+    build-packages: []
     organize:
-      usr/lib/*/*fann*.so*: usr/lib/
       usr/bin/mpg123.bin: usr/bin/mpg123
+      usr/lib/*/*fann*.so*: usr/lib/
+    override-build: "\nsnapcraftctl build\nln -sf aclocal-1.15 $SNAPCRAFT_PART_INSTALL/usr/bin/aclocal\n\
+      ln -sf automake-1.15 $SNAPCRAFT_PART_INSTALL/usr/bin/automake\nfor sofile in\
+      \ libc.so libm.so libpthread.so; do\n    sed -Ei 's|(/usr/lib/$SNAPCRAFT_ARCH_TRIPLET)|/snap/mycroft/current\\\
+      1|g' $SNAPCRAFT_PART_INSTALL/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/$sofile\ndone\n"
+    plugin: nil
+    stage:
+    - -usr/bin/sudo
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/avahi
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/dri
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gdk-pixbuf-2.0
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gio
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/girepository-1.0
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/glib-2.0
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gtk-3.0
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/krb5
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libasn1*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libasyncns*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libatk*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libatspi*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libavahi*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libcairo*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libcolord*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libcroco*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libcrypto*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libcups*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libcurl-gnutls*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libdatrie*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libdconf*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libdrm*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libedit*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libEGL*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libelf*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libepoxy*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libevdev*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libexpatw*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libffi*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libFLAC*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libfontconfig*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libfreetype*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgbm*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgdk*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgio*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgirepository*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libGL*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libglapi*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libglib-2.0*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgmodule-2.0*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgmp*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgnutls*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgobject-2.0*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgraphite2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgssapi*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgthread-2.0*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgtk-3*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libgudev-1.0*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libharfbuzz*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libhcrypto*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libheim*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libhogweed*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libhx509*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libICE*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libicu*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libidn2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libinput*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libjack*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libjbig*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libjpeg*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libjson-glib-1.0*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libk5crypto*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libkrb5*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/liblber-2.4*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/liblcms2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libldap*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libLLVM*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libmpc*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libmpdec*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libmpfr*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libmtdev*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libnettle*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libnghttp2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libnotify*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libogg*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libp11-kit*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpango*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpciaccess*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpixman-1*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpng*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libproxy*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpsl*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpulse*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpython3.6m*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/librest-0.7*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libroken*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/librsvg-2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/librtmp*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsamplerate*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsasl2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsecret-1*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsensors*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libSM*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsndfile*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsoup*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libspeexdsp*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsqlite3*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libssh2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libssl*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libtasn1*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libtdb*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libthai*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libtiff*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libunistring*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libvorbis*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libwacom*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libwayland*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libwebp*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libwind*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libxcb*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libX*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libxkbcommon*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libxml2*
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libxshmfence
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/sasl2
+    - -usr/share/alsa
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libasound*
     stage-packages:
-    - libgdk-pixbuf2.0-0 # yad
-    - libgtk-3-0         # yad
-    - libfreetype6       # yad
-    - libfontconfig1     # yad
-    - libnotify4         # yad
-    - libnotify-bin
     - yad
+    - autoconf
+    - automake
     - binutils
     - bison
+    - build-essential
     - cmake
+    - coreutils
     - curl
     - flac
     - g++
@@ -214,7 +471,6 @@ parts:
     - git
     - jq
     - libasound2-dev
-    - libasound2-plugins
     - libc++-dev
     - libc6-dev
     - libfann-dev
@@ -222,85 +478,76 @@ parts:
     - libglib2.0-dev
     - libgpm2
     - libicu-dev
+    - libjack-jackd2-0
     - libjpeg-dev
     - libpcre2-dev
-    - libpulse-dev
+    - portaudio19-dev
     - libssl-dev
+    - libtool
     - libvlc-dev
-    - locales-all
     - make
     - mpg123
     - mplayer
-    - patch
     - pkg-config
-    - portaudio19-dev
+    - procps
     - pulseaudio-utils
-    - python-gobject-2-dev
-    - python-setuptools
+    - python3
     - python3-dev
+    - python3-pip
+    - python3-setuptools
+    - python3-venv
     - rsync
+    - screen
     - swig
     - vlc
     - zlib1g
-
-  mycroft:
-    after: [snapcraft-preload]
-    source: https://github.com/MycroftAI/mycroft-core.git
-    source-type: git
-    plugin: nil
-    override-pull: |
-      snapcraftctl pull
-      git checkout "$(git describe --tags --abbrev=0 --match release/v*)"
-      snapcraftctl set-version "$(git describe --tags | sed -e 's|release/v||')"
-      # patch -Np1 -i "$SNAPCRAFT_STAGE/mycroft-cache.diff"
-    override-build: |
-      mkdir -p $SNAPCRAFT_PART_INSTALL/opt/mycroft
-      rsync -a ./ $SNAPCRAFT_PART_INSTALL/opt/mycroft/
+  scripts:
+    after:
+    - alsa-mixin
+    build-packages: []
+    organize:
+      mycroft-*: bin/
+    plugin: dump
+    source: scripts
+    source-type: local
+    stage:
+    - -usr/share/alsa
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libasound*
+    - bin/mycroft-*
+    stage-packages: []
+  snapcraft-preload:
+    after:
+    - alsa-mixin
+    build-packages:
+    - try:
+      - gcc-multilib
+      - g++-multilib
+    plugin: cmake
+    source: https://github.com/diddledan/snapcraft-preload.git
+    source-branch: semaphore-support
+    stage:
+    - -usr/share/alsa
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
+    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libasound*
     stage-packages:
-    - libgdk-pixbuf2.0-0 # yad
-    - libgtk-3-0         # yad
-    - libfreetype6       # yad
-    - libfontconfig1     # yad
-    - libnotify4         # yad
-    - yad
-    - autoconf
-    - automake
-    - bison
-    - build-essential
-    - curl
-    - flac
-    - git
-    - jq
-    - libfann-dev
-    - libffi-dev
-    - libglib2.0-dev
-    - libicu-dev
-    - libjpeg-dev
-    - libssl-dev
-    - libtool
-    - mpg123
-    - pkg-config
-    - portaudio19-dev
-    - python-gobject-2-dev
-    - python-setuptools
-    - python3
-    - python3-dev
-    - screen
-    - swig
-    prime:
-    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libc.so
-    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libm.so
-    - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpthread.so
-
-  # mycroft-plasma:
-  #   after: [desktop-qt5]
-  #   source: https://anongit.kde.org/plasma-mycroft.git
-  #   plugin: cmake
-  #   configflags:
-  #   - -DCMAKE_INSTALL_PREFIX=/usr
-  #   - -DCMAKE_BUILD_TYPE=Release
-  #   - -DKDE_INSTALL_LIBDIR=lib
-  #   - -DKDE_INSTALL_USE_QT_SYS_PATHS=on
-  #   override-build: |
-  #     snapcraftctl build
-  #     chmod +x usr/share/plasma/plasmoids/org.kde.plasma.mycroftplasmoid/contents/code/*service.sh
+    - try:
+      - lib32stdc++6
+plugs:
+  gnome-3-28-1804:
+    default-provider: gnome-3-28-1804:gnome-3-28-1804
+    interface: content
+    target: $SNAP/gnome-platform
+  gtk-3-themes:
+    default-provider: gtk-common-themes:gtk-3-themes
+    interface: content
+    target: $SNAP/data-dir/themes
+  icon-themes:
+    default-provider: gtk-common-themes:icon-themes
+    interface: content
+    target: $SNAP/data-dir/icons
+  sound-themes:
+    default-provider: gtk-common-themes:sounds-themes
+    interface: content
+    target: $SNAP/data-dir/sounds
+summary: Your AI personal assistant!
