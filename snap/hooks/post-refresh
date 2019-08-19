@@ -4,4 +4,6 @@ set -e
 
 if [ ! -d "$SNAP_COMMON/vartmp" ]; then
     mkdir -m1777 "$SNAP_COMMON/vartmp"
+else
+    chmod 1777 "$SNAP_COMMON/vartmp"
 fi
