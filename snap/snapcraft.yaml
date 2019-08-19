@@ -65,15 +65,16 @@ parts:
       \ <<EOF\n#!/bin/bash\n\nfunction append_dir() {\n  local var=\"\\$1\"\n  local\
       \ dir=\"\\$2\"\n  if [ -d \"\\$dir\" ]; then\n    eval \"export \\$var=\\\"\\\
       \\$dir\\${\\$var:+:\\\\$\\$var}\\\"\"\n  fi\n}\n\nexport ALSA_CONFIG_PATH=\"\
-      $SNAP/etc/asound.conf\"\n\nif [ -d \"\\$SNAP/usr/lib/alsa-lib\" ]; then\n  \
-      \  append_dir LD_LIBRARY_PATH \"\\$SNAP/usr/lib/alsa-lib\"\nelif [ -d \"\\$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib\"\
-      \ ]; then\n    append_dir LD_LIBRARY_PATH \"\\$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib\"\
-      \nfi\nappend_dir LD_LIBRARY_PATH \"\\$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio\"\
-      \n\n# Make PulseAudio socket available inside the snap-specific $XDG_RUNTIME_DIR\n\
-      if [ -n \"\\$XDG_RUNTIME_DIR\" ]; then\n    pulsenative=\"pulse/native\"\n \
-      \   pulseaudio_sockpath=\"\\$XDG_RUNTIME_DIR/../\\$pulsenative\"\n    if [ -S\
-      \ \"\\$pulseaudio_sockpath\" ]; then\n        export PULSE_SERVER=\"unix:\\\
-      ${pulseaudio_sockpath}\"\n    fi\nfi\n\nexec \"\\$@\"\nEOF\nchmod +x alsa-launch\n"
+      \\$SNAP/etc/asound.conf\"\n\nif [ -d \"\\$SNAP/usr/lib/alsa-lib\" ]; then\n\
+      \    append_dir LD_LIBRARY_PATH \"\\$SNAP/usr/lib/alsa-lib\"\nelif [ -d \"\\\
+      $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib\" ]; then\n    append_dir LD_LIBRARY_PATH\
+      \ \"\\$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib\"\nfi\nappend_dir LD_LIBRARY_PATH\
+      \ \"\\$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio\"\n\n# Make PulseAudio\
+      \ socket available inside the snap-specific $XDG_RUNTIME_DIR\nif [ -n \"\\$XDG_RUNTIME_DIR\"\
+      \ ]; then\n    pulsenative=\"pulse/native\"\n    pulseaudio_sockpath=\"\\$XDG_RUNTIME_DIR/../\\\
+      $pulsenative\"\n    if [ -S \"\\$pulseaudio_sockpath\" ]; then\n        export\
+      \ PULSE_SERVER=\"unix:\\${pulseaudio_sockpath}\"\n    fi\nfi\n\nexec \"\\$@\"\
+      \nEOF\nchmod +x alsa-launch\n"
     plugin: nil
     source: https://github.com/diddledan/snapcraft-alsa.git
     stage-packages:
