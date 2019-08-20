@@ -15,6 +15,7 @@ cat > scripts/prepare-msm.sh <<EOF
 #!/bin/sh
 true
 EOF
+sed -E -i 's|(python3 -m \\${_module} \\$_params)|$SNAP/bin/snapcraft-preload \\1|g' start-mycroft.sh
 ",
         "override-build": "
 mkdir -p $SNAPCRAFT_PART_INSTALL/mycroft-source

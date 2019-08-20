@@ -88,4 +88,4 @@ if [ $needs_update = true ]; then
     echo "MYCROFT_LAST_REVISION=$SNAP_REVISION" > "$SNAP_USER_DATA/.mycroft_revision"
 fi
 
-exec "$SNAP/bin/snapcraft-preload" "$SNAP_USER_COMMON/mycroft-core/start-mycroft.sh" "$CMD" "$@"
+exec "$SNAP_USER_COMMON/mycroft-core/start-mycroft.sh" "$CMD" "$@"

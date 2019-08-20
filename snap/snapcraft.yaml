@@ -43,6 +43,8 @@ layout:
     bind-file: $SNAP/etc/mycroft/mycroft.conf
   /usr/include:
     bind: $SNAP/usr/include
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
   /var/tmp:
     bind: $SNAP_COMMON/vartmp
 name: mycroft
@@ -294,6 +296,9 @@ parts:
       true
 
       EOF
+
+      sed -E -i ''s|(python3 -m \${_module} \$_params)|$SNAP/bin/snapcraft-preload
+      \1|g'' start-mycroft.sh
 
       '
     plugin: nil
