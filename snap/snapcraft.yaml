@@ -297,7 +297,7 @@ parts:
 
       EOF
 
-      sed -E -i ''s|(python3 -m \${_module} \$_params)|$SNAP/bin/snapcraft-preload
+      sed -E -i ''s|(python3 -m \$\{_module\} \$_params)|$SNAP/bin/snapcraft-preload
       \1|g'' start-mycroft.sh
 
       '
