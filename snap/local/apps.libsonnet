@@ -1,17 +1,17 @@
 {
     mycroft: {
-        command: "bin/desktop-launch $SNAP/bin/mycroft-launch",
+        command: "bin/mycroft-launch",
         desktop: "usr/share/applications/mycroft.desktop",
+        extensions: ["gnome-3-28"],
         plugs: [
-            "gnome-3-28-1804",
-            "gtk-3-themes",
-            "icon-themes",
-            "sound-themes",
+            "audio-playback",
+            "audio-record",
             "desktop",
             "desktop-legacy",
             "mount-observe",
             "network",
             "network-bind",
+            "pulseaudio",
             "unity7",
             "wayland",
             "x11",

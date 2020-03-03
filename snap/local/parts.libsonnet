@@ -1,63 +1,61 @@
-local gnomePlatformFiles = import 'gnomePlatformFiles.libsonnet';
-
 {
     mycroft: {
         after: ["snapcraft-preload"],
         source: "https://github.com/MycroftAI/mycroft-core.git",
         "source-type": "git",
         plugin: "nil",
-        "override-pull": "
-snapcraftctl pull
-git checkout \"$(git describe --tags --abbrev=0 --match release/v*)\"
-snapcraftctl set-version \"$(git describe --tags | sed -e 's|release/v||')\"
-sed -i 's|/var/log/mycroft|$SNAP_USER_COMMON/logs|g' start-mycroft.sh
-cat > scripts/prepare-msm.sh <<EOF
-#!/bin/sh
-true
-EOF
-sed -E -i 's|(python3 -m \\$\\{_module\\} \\$_params)|$SNAP/bin/snapcraft-preload \\1|g' start-mycroft.sh
-",
-        "override-build": "
-mkdir -p $SNAPCRAFT_PART_INSTALL/mycroft-source
-rsync -a --exclude .git ./ $SNAPCRAFT_PART_INSTALL/mycroft-source/
-",
+        "override-pull": |||
+            snapcraftctl pull
+            git checkout "$(git describe --tags --abbrev=0 --match release/v*)"
+            snapcraftctl set-version "$(git describe --tags | sed -e 's|release/v||')"
+            sed -i 's|/var/log/mycroft|$SNAP_USER_COMMON/logs|g' start-mycroft.sh
+            cat > scripts/prepare-msm.sh <<EOF
+            #!/bin/sh
+            true
+            EOF
+            sed -E -i 's|(python3 -m \$\{_module\} \$_params)|$SNAP/bin/snapcraft-preload \1|g' start-mycroft.sh
+        |||,
+        "override-build": |||
+            mkdir -p $SNAPCRAFT_PART_INSTALL/mycroft-source
+            rsync -a --exclude .git ./ $SNAPCRAFT_PART_INSTALL/mycroft-source/
+        |||,
         "build-packages": ["rsync"],
     },
 
     "mycroft-conf": {
         plugin: "nil",
-        "override-pull": "
-cat  > mycroft.conf <<EOF
-{
-    \"enclosure\": {
-        \"update\": \"false\"
-    },
-    \"data_dir\": \"~/snap/mycroft/common/mycroft-data\",
-    \"log_dir\": \"~/snap/mycroft/common/logs\"
-}
-EOF
-",
-        "override-build": "
-install -m644 -D -t $SNAPCRAFT_PART_INSTALL/etc/mycroft mycroft.conf
-",
+        "override-pull": |||
+            cat  > mycroft.conf <<EOF
+            {
+                "enclosure": {
+                    "update": "false"
+                },
+                "data_dir": "~/snap/mycroft/common/mycroft-data",
+                "log_dir": "~/snap/mycroft/common/logs"
+            }
+            EOF
+        |||,
+        "override-build": |||
+            install -m644 -D -t $SNAPCRAFT_PART_INSTALL/etc/mycroft mycroft.conf
+        |||,
     },
 
     "mycroft-deps": {
         after: ["mimic", "snapcraft-preload"],
         plugin: "nil",
-        "override-build": "
-snapcraftctl build
-ln -sf aclocal-1.15 $SNAPCRAFT_PART_INSTALL/usr/bin/aclocal
-ln -sf automake-1.15 $SNAPCRAFT_PART_INSTALL/usr/bin/automake
-for sofile in libc.so libm.so libpthread.so; do
-    sed -Ei 's|(/usr/lib/$SNAPCRAFT_ARCH_TRIPLET)|/snap/mycroft/current\\1|g' $SNAPCRAFT_PART_INSTALL/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/$sofile
-done
-",
+        "override-build": |||
+            snapcraftctl build
+            ln -sf aclocal-1.15 $SNAPCRAFT_PART_INSTALL/usr/bin/aclocal
+            ln -sf automake-1.15 $SNAPCRAFT_PART_INSTALL/usr/bin/automake
+            for sofile in libc.so libm.so libpthread.so; do
+                sed -Ei 's|(/usr/lib/$SNAPCRAFT_ARCH_TRIPLET)|/snap/mycroft/current\1|g' $SNAPCRAFT_PART_INSTALL/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/$sofile
+            done
+        |||,
         organize: {
             "usr/lib/*/*fann*.so*": "usr/lib/",
             "usr/bin/mpg123.bin": "usr/bin/mpg123",
         },
-        stage: ["-usr/bin/sudo"] + gnomePlatformFiles,
+        stage: ["-usr/bin/sudo"],
         "stage-packages": [
             "yad",
             "autoconf",
@@ -127,7 +125,6 @@ done
             "libpcre2-8-0",
             "libportaudio2",
         ],
-        stage: gnomePlatformFiles,
         prime: [
             "usr/bin",
             "usr/include",
@@ -154,19 +151,6 @@ done
             "mycroft.desktop": "usr/share/applications/mycroft.desktop",
             "mycroft.png": "usr/share/icons/mycroft.png",
         },
-    },
-
-    "desktop-gnome-platform": {
-        source: "https://github.com/ubuntu/snapcraft-desktop-helpers.git",
-        "source-subdir": "gtk",
-        plugin: "make",
-        "make-parameters": ["FLAVOR=gtk3"],
-        "build-packages": ["gcc"],
-        "override-build": "
-snapcraftctl build
-mkdir -pv $SNAPCRAFT_PART_INSTALL/gnome-platform
-mkdir -pv $SNAPCRAFT_PART_INSTALL/data-dir
-",
     },
 
     "snapcraft-preload": {

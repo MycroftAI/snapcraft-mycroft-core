@@ -8,15 +8,17 @@ local parts = import 'parts.libsonnet';
 snapcraft {
     name: "mycroft",
     summary: "Your AI personal assistant!",
-    description: "Mycroft is a free and open-source intelligent personal assistant and knowledge
-navigator for Linux-based operating systems that uses a natural language user
-interface. It is the world's first fully open-source AI voice assistant.
+    description: |||
+        Mycroft is a free and open-source intelligent personal assistant and knowledge
+        navigator for Linux-based operating systems that uses a natural language user
+        interface. It is the world's first fully open-source AI voice assistant.
 
-Mycroft is named after a fictional computer from 1966 science fiction novel
-\"The Moon Is a Harsh Mistress\".
+        Mycroft is named after a fictional computer from 1966 science fiction novel
+        "The Moon Is a Harsh Mistress".
 
-Installing skills by voice seems to be broken for now, but you can use
-the `mycroft.msm` command to list, install, and remove skills.",
+        Installing skills by voice seems to be broken for now, but you can use
+        the `mycroft.msm` command to list, install, and remove skills.
+    |||,
     "adopt-info": "mycroft",
     grade: "stable",
     confinement: "strict",
@@ -35,4 +37,4 @@ the `mycroft.msm` command to list, install, and remove skills.",
     plugs: plugs,
     apps: apps,
     parts: parts,
-} + alsa.apply()
+} + alsa()
