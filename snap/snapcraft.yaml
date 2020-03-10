@@ -24,7 +24,7 @@ apps:
     - wayland
     - x11
 base: core18
-confinement: strict
+confinement: devmode
 description: 'Mycroft is a free and open-source intelligent personal assistant and
   knowledge
 
@@ -43,7 +43,7 @@ description: 'Mycroft is a free and open-source intelligent personal assistant a
   the `mycroft.msm` command to list, install, and remove skills.
 
   '
-grade: stable
+grade: devel
 layout:
   /etc/mycroft/mycroft.conf:
     bind-file: $SNAP/etc/mycroft/mycroft.conf
@@ -64,6 +64,7 @@ parts:
     source-subdir: snapcraft-assets
     stage-packages:
     - libasound2
+    - libasound2-dev
     - libasound2-plugins
   desktop-file:
     after:
@@ -163,7 +164,8 @@ parts:
     - -usr/share/alsa
     - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
     - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libasound*
-    stage-packages: []
+    stage-packages:
+    - libfann-dev
   mycroft-deps:
     after:
     - alsa-mixin
@@ -194,6 +196,7 @@ parts:
     - coreutils
     - curl
     - flac
+    - freeglut3
     - g++
     - gcc
     - git
@@ -201,15 +204,16 @@ parts:
     - libasound2-dev
     - libc++-dev
     - libc6-dev
-    - libfann-dev
     - libffi-dev
     - libglib2.0-dev
+    - libglu1-mesa
     - libgpm2
     - libicu-dev
     - libjack-jackd2-0
     - libjpeg-dev
     - libpcre2-dev
     - portaudio19-dev
+    - libslang2
     - libssl-dev
     - libtool
     - libvlc-dev
@@ -279,4 +283,3 @@ plugs:
     interface: content
     target: $SNAP/data-dir/sounds
 summary: Your AI personal assistant!
-version: '0.1'

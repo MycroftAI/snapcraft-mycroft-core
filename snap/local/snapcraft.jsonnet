@@ -20,8 +20,8 @@ snapcraft {
         the `mycroft.msm` command to list, install, and remove skills.
     |||,
     "adopt-info": "mycroft",
-    grade: "stable",
-    confinement: "strict",
+    grade: "devel",
+    confinement: "devmode",
     base: "core18",
     layout: {
         "/etc/mycroft/mycroft.conf": {
