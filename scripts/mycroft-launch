@@ -23,69 +23,41 @@ if [ $needs_update = true ]; then
     rsync -rv --delete "$SNAP/mycroft-source/" "$SNAP_USER_COMMON/mycroft-core/" | \
     yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --text="$ACTION mycroft" --width=400 --center --no-buttons --auto-close --on-top --no-escape
 
-    python3 -m venv "$SNAP_USER_COMMON/mycroft-core/.venv" --without-pip
-    ln -sf "$(dirname "$SNAP")/current/usr/bin/python3" "$SNAP_USER_COMMON/mycroft-core/.venv/bin/python3"
+    python3 -m venv "$SNAP_USER_COMMON/venv" --without-pip
+    ln -sf "$(dirname "$SNAP")/current/usr/bin/python3" "$SNAP_USER_COMMON/venv/bin/python3"
 
     curl -o "$TMPDIR/get-pip.py" https://bootstrap.pypa.io/get-pip.py 2>&1 | \
     stdbuf -oL tr '\r' '\n' | \
     sed -u -E 's/^ *([0-9][0-9]*).*( [0-9].*$)/\1\n#Downloading Python PIP(\2)/' | \
     yad --progress --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --width=400 --center --no-buttons --auto-close --on-top --no-escape
     
-    "$SNAP_USER_COMMON/mycroft-core/.venv/bin/python3" "$TMPDIR/get-pip.py" | \
+    "$SNAP_USER_COMMON/venv/bin/python3" "$TMPDIR/get-pip.py" | \
     yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --text="Installing Python PIP" --width=400 --center --no-buttons --auto-close --on-top --no-escape
 
-    sed -i 's|^def rmtree(dir, ignore_errors=False):|def rmtree(dir, ignore_errors=True):|' "$SNAP_USER_COMMON"/mycroft-core/.venv/lib/python3.?/site-packages/pip/_internal/utils/misc.py
+    sed -i 's|^def rmtree(dir, ignore_errors=False):|def rmtree(dir, ignore_errors=True):|' "$SNAP_USER_COMMON"/venv/lib/python3.?/site-packages/pip/_internal/utils/misc.py
 
-    . "$SNAP_USER_COMMON/mycroft-core/.venv/bin/activate"
+    . "$SNAP_USER_COMMON/venv/bin/activate"
 
-    PYTHON=$( python3 -c "import sys;print('python{}.{}'.format(sys.version_info[0], sys.version_info[1]))" )
-
-    # Add mycroft-core to the virtualenv path
-    # (This is equivalent to typing 'add2virtualenv $TOP', except
-    # you can't invoke that shell function from inside a script)
-    VENV_PATH_FILE="$SNAP_USER_COMMON/mycroft-core/.venv/lib/$PYTHON/site-packages/_virtualenv_path_extensions.pth"
-    if [ ! -f "$VENV_PATH_FILE" ] ; then
-        echo "import sys; sys.__plen = len(sys.path)" > "$VENV_PATH_FILE" || return 1
-        echo "import sys; new=sys.path[sys.__plen:]; del sys.path[sys.__plen:]; p=getattr(sys,'__egginsert',0); sys.path[p:p]=new; sys.__egginsert = p+len(new)" >> "$VENV_PATH_FILE" || return 1
-    fi
-
-    if ! grep -q "$SNAP_USER_COMMON/mycroft-core" $VENV_PATH_FILE; then
-        if grep -q "$SNAP_USER_COMMON/mycroft" $VENV_PATH_FILE; then
-            echo "Swapping mycroft path to mycroft-core in virtualenv"
-            sed -i.tmp "s|$SNAP_USER_COMMON/mycroft|$SNAP_USER_COMMON/mycroft-core|" "$VENV_PATH_FILE"
-        else
-            echo "Adding mycroft-core to virtualenv path"
-            sed -i.tmp '1 a\
-'"$SNAP_USER_COMMON/mycroft-core"'
-' "${VENV_PATH_FILE}"
-        fi
-    fi
-
-    pip install -r requirements.txt | \
+    pip install  "$SNAP_USER_COMMON/mycroft-core/" | \
     stdbuf -oL tr '\r' '\n' | \
     yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --text="Installing Mycroft dependencies" --width=400 --center --no-buttons --auto-close --on-top --no-escape
     
-    cd "$SNAP_USER_COMMON/mycroft-core"
-    md5sum requirements.txt test-requirements.txt dev_setup.sh > .installed
-
     echo "$SNAP_REVISION" > "$SNAP_USER_COMMON/.revision"
 else
-    . "$SNAP_USER_COMMON/mycroft-core/.venv/bin/activate"
+    . "$SNAP_USER_COMMON/venv/bin/activate"
 fi
-
-cd "$SNAP_USER_COMMON/mycroft-core"
 
 if [ ! -d "$SNAP_USER_COMMON/logs" ]; then
     mkdir -p "$SNAP_USER_COMMON/logs"
-fi
-
-CMD="all"
-if [ -n "$1" ]; then
-  CMD="$1";shift
 fi
 
 if [ $needs_update = true ]; then
     echo "MYCROFT_LAST_REVISION=$SNAP_REVISION" > "$SNAP_USER_DATA/.mycroft_revision"
 fi
 
-exec "$SNAP_USER_COMMON/mycroft-core/start-mycroft.sh" "$CMD" "$@"
+mycroft-messagebus >> /$SNAP_USER_COMMON/logs/bus.log &
+mycroft-enclosure-client >> /$SNAP_USER_COMMON/logs/enclosure.log &
+mycroft-audio >> /$SNAP_USER_COMMON/logs/audio.log &
+mycroft-speech-client >> /$SNAP_USER_COMMON/logs/voice.log &
+mycroft-skills >> /$SNAP_USER_COMMON/logs/skills.log &
+mycroft-cli-client
