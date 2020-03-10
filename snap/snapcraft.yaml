@@ -204,6 +204,7 @@ parts:
     - libasound2-dev
     - libc++-dev
     - libc6-dev
+    - libfann-dev
     - libffi-dev
     - libglib2.0-dev
     - libglu1-mesa
