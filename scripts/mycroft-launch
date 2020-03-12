@@ -43,7 +43,14 @@ if [ $needs_update = true ]; then
 
     . "$VENV_FOLDER/bin/activate"
 
+    #Environment info
+    echo "GCC INCLUDES\n--------------"
+    echo | gcc -E -Wp,-v -
 
+    echo "GCC LIBS\n--------------"
+    gcc -print-search-dirs | sed '/^lib/b 1;d;:1;s,/[^/.][^/]*/\.\./,/,;t 1;s,:[^=]*=,:;,;s,;,;  ,g' | tr \; \\012
+    echo "SWIG LIBS"
+    swig -swiglib
 
     pip install  "$SNAP_USER_COMMON/mycroft-core/" | \
     stdbuf -oL tr '\r' '\n' | \
