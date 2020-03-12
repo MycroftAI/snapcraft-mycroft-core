@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export SWIG_LIB="$SNAP/usr/share/swig3.0"
+
 needs_update=true
 
 . "$SNAP_USER_DATA/.mycroft_revision" 2>/dev/null || true
