@@ -4,6 +4,8 @@ export SWIG_LIB="$SNAP/usr/share/swig3.0"
 
 needs_update=true
 
+VENV_FOLDER="$SNAP_USER_COMMON/venv"
+
 . "$SNAP_USER_DATA/.mycroft_revision" 2>/dev/null || true
 if [ "$MYCROFT_LAST_REVISION" = "$SNAP_REVISION" ]; then
     needs_update=false
@@ -25,20 +27,23 @@ if [ $needs_update = true ]; then
     rsync -rv --delete "$SNAP/mycroft-source/" "$SNAP_USER_COMMON/mycroft-core/" | \
     yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --text="$ACTION mycroft" --width=400 --center --no-buttons --auto-close --on-top --no-escape
 
-    python3 -m venv "$SNAP_USER_COMMON/venv" --without-pip
-    ln -sf "$(dirname "$SNAP")/current/usr/bin/python3" "$SNAP_USER_COMMON/venv/bin/python3"
+    echo "Creating virtualenv in $VENV_FOLDER"
+    python3 -m venv "$VENV_FOLDER"  --without-pip
+    ln -sf "$(dirname "$SNAP")/current/usr/bin/python3" "$VENV_FOLDER/bin/python3"
 
     curl -o "$TMPDIR/get-pip.py" https://bootstrap.pypa.io/get-pip.py 2>&1 | \
     stdbuf -oL tr '\r' '\n' | \
     sed -u -E 's/^ *([0-9][0-9]*).*( [0-9].*$)/\1\n#Downloading Python PIP(\2)/' | \
     yad --progress --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --width=400 --center --no-buttons --auto-close --on-top --no-escape
     
-    "$SNAP_USER_COMMON/venv/bin/python3" "$TMPDIR/get-pip.py" | \
+    "$VENV_FOLDER/bin/python3" "$TMPDIR/get-pip.py" | \
     yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --text="Installing Python PIP" --width=400 --center --no-buttons --auto-close --on-top --no-escape
 
-    sed -i 's|^def rmtree(dir, ignore_errors=False):|def rmtree(dir, ignore_errors=True):|' "$SNAP_USER_COMMON"/venv/lib/python3.?/site-packages/pip/_internal/utils/misc.py
+    sed -i 's|^def rmtree(dir, ignore_errors=False):|def rmtree(dir, ignore_errors=True):|' "$VENV_FOLDER/lib/python3.?/site-packages/pip/_internal/utils/misc.py"
 
-    . "$SNAP_USER_COMMON/venv/bin/activate"
+    . "$VENV_FOLDER/bin/activate"
+
+
 
     pip install  "$SNAP_USER_COMMON/mycroft-core/" | \
     stdbuf -oL tr '\r' '\n' | \
@@ -46,7 +51,7 @@ if [ $needs_update = true ]; then
     
     echo "$SNAP_REVISION" > "$SNAP_USER_COMMON/.revision"
 else
-    . "$SNAP_USER_COMMON/venv/bin/activate"
+    . "$VENV_FOLDER/bin/activate"
 fi
 
 if [ ! -d "$SNAP_USER_COMMON/logs" ]; then
