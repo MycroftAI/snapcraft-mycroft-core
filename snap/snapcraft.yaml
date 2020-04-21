@@ -5,6 +5,9 @@
 adopt-info: mycroft
 apps:
   mycroft:
+    environment:
+      SWIG_LIB: $SNAP/usr/share/swig3.0
+      GIT_EXEC_PATH: $SNAP/usr/lib/git-core/
     command: bin/mycroft-launch
     command-chain:
     - snap/command-chain/alsa-launch
