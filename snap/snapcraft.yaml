@@ -162,6 +162,7 @@ parts:
     - -usr/bin/sudo
     stage-packages:
     - yad
+    - psmisc
     - autoconf
     - automake
     - binutils

@@ -74,5 +74,14 @@ mycroft-enclosure-client >> /$SNAP_USER_COMMON/logs/enclosure.log &
 mycroft-audio >> /$SNAP_USER_COMMON/logs/audio.log &
 mycroft-speech-client >> /$SNAP_USER_COMMON/logs/voice.log &
 mycroft-skills >> /$SNAP_USER_COMMON/logs/skills.log &
+
 mycroft-cli-client
+
+echo "Stopping all processes..."
+killall mycroft-skills
+killall mycroft-encolosure-client
+killall mycroft-speech-client
+killall mycroft-audio
+
+echo "Stopped, launching debug python..."
 python
