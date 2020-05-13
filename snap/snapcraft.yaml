@@ -10,6 +10,7 @@ apps:
     environment:
       SWIG_LIB: $SNAP/usr/share/swig3.0
       GIT_EXEC_PATH: $SNAP/usr/lib/git-core/
+      MPG123_MODDIR: $SNAP/usr/lib/x86_64-linux-gnu/mpg123
     command-chain:
     - snap/command-chain/alsa-launch
     command: bin/mycroft-launch
