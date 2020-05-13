@@ -24,33 +24,34 @@ if [ $needs_update = true ]; then
 
     [ -f "$SNAP_USER_COMMON/mycroft-core/.version" ] && ACTION="Updating" || ACTION="Installing"
 
-    rsync -rv --delete "$SNAP/mycroft-source/" "$SNAP_USER_COMMON/mycroft-core/" | \
-    yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --text="$ACTION mycroft" --width=400 --center --no-buttons --auto-close --on-top --no-escape
+    rsync -rv --delete "$SNAP/mycroft-source/" \
+        "$SNAP_USER_COMMON/mycroft-core/" | \
+        yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" \
+        --title="Mycroft" --text="$ACTION mycroft" --width=400 --center \
+        --no-buttons --auto-close --on-top --no-escape
 
     echo "Creating virtualenv in $VENV_FOLDER"
     python3 -m venv "$VENV_FOLDER"  --without-pip
-    ln -sf "$(dirname "$SNAP")/current/usr/bin/python3" "$VENV_FOLDER/bin/python3"
+    ln -sf "$(dirname "$SNAP")/current/usr/bin/python3" \
+        "$VENV_FOLDER/bin/python3"
 
     curl -o "$TMPDIR/get-pip.py" https://bootstrap.pypa.io/get-pip.py 2>&1 | \
     stdbuf -oL tr '\r' '\n' | \
-    sed -u -E 's/^ *([0-9][0-9]*).*( [0-9].*$)/\1\n#Downloading Python PIP(\2)/' | \
-    yad --progress --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --width=400 --center --no-buttons --auto-close --on-top --no-escape
+    sed -u -E \
+        's/^ *([0-9][0-9]*).*( [0-9].*$)/\1\n#Downloading Python PIP(\2)/' | \
+    yad --progress --image="$SNAP/usr/share/icons/mycroft.png" \
+        --title="Mycroft" --width=400 --center --no-buttons --auto-close \
+        --on-top --no-escape
     
     "$VENV_FOLDER/bin/python3" "$TMPDIR/get-pip.py" | \
-    yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --text="Installing Python PIP" --width=400 --center --no-buttons --auto-close --on-top --no-escape
+    yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" \
+        --title="Mycroft" --text="Installing Python PIP" --width=400 --center \
+        --no-buttons --auto-close --on-top --no-escape
 
-    sed -i 's|^def rmtree(dir, ignore_errors=False):|def rmtree(dir, ignore_errors=True):|' "$VENV_FOLDER/lib/python3.?/site-packages/pip/_internal/utils/misc.py"
+    sed -i 's|^def rmtree(dir, ignore_errors=False):|def rmtree(dir, ignore_errors=True):|' \
+        "$VENV_FOLDER/lib/python3.?/site-packages/pip/_internal/utils/misc.py"
 
     . "$VENV_FOLDER/bin/activate"
-
-    #Environment info
-    echo "GCC INCLUDES\n--------------"
-    echo | gcc -E -Wp,-v -
-
-    echo "GCC LIBS\n--------------"
-    gcc -print-search-dirs | sed '/^lib/b 1;d;:1;s,/[^/.][^/]*/\.\./,/,;t 1;s,:[^=]*=,:;,;s,;,;  ,g' | tr \; \\012
-    echo "SWIG LIBS"
-    swig -swiglib
 
     pip install  "$SNAP_USER_COMMON/mycroft-core/" | \
     stdbuf -oL tr '\r' '\n' | \
@@ -69,11 +70,11 @@ if [ $needs_update = true ]; then
     echo "MYCROFT_LAST_REVISION=$SNAP_REVISION" > "$SNAP_USER_DATA/.mycroft_revision"
 fi
 
-mycroft-messagebus >> /$SNAP_USER_COMMON/logs/bus.log &
-mycroft-enclosure-client >> /$SNAP_USER_COMMON/logs/enclosure.log &
-mycroft-audio >> /$SNAP_USER_COMMON/logs/audio.log &
-mycroft-speech-client >> /$SNAP_USER_COMMON/logs/voice.log &
-mycroft-skills >> /$SNAP_USER_COMMON/logs/skills.log &
+mycroft-messagebus >> /$SNAP_USER_COMMON/logs/bus.log 2>&1 &
+mycroft-enclosure-client >> /$SNAP_USER_COMMON/logs/enclosure.log 2>&1 &
+mycroft-audio >> /$SNAP_USER_COMMON/logs/audio.log 2>&1 &
+mycroft-speech-client >> /$SNAP_USER_COMMON/logs/voice.log 2>&1 &
+mycroft-skills >> /$SNAP_USER_COMMON/logs/skills.log 2>&1 &
 
 mycroft-cli-client
 
@@ -82,6 +83,4 @@ killall mycroft-skills
 killall mycroft-encolosure-client
 killall mycroft-speech-client
 killall mycroft-audio
-
-echo "Stopped, launching debug python..."
-python
+echo "Stopped"
