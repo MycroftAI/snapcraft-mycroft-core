@@ -42,7 +42,7 @@ if [ $needs_update = true ]; then
     yad --progress --image="$SNAP/usr/share/icons/mycroft.png" \
         --title="Mycroft" --width=400 --center --no-buttons --auto-close \
         --on-top --no-escape
-    
+
     "$VENV_FOLDER/bin/python3" "$TMPDIR/get-pip.py" | \
     yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" \
         --title="Mycroft" --text="Installing Python PIP" --width=400 --center \
@@ -56,7 +56,7 @@ if [ $needs_update = true ]; then
     pip install  "$SNAP_USER_COMMON/mycroft-core/" | \
     stdbuf -oL tr '\r' '\n' | \
     yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --text="Installing Mycroft dependencies" --width=400 --center --no-buttons --auto-close --on-top --no-escape
-    
+
     echo "$SNAP_REVISION" > "$SNAP_USER_COMMON/.revision"
 else
     . "$VENV_FOLDER/bin/activate"
@@ -70,11 +70,11 @@ if [ $needs_update = true ]; then
     echo "MYCROFT_LAST_REVISION=$SNAP_REVISION" > "$SNAP_USER_DATA/.mycroft_revision"
 fi
 
-mycroft-messagebus >> /$SNAP_USER_COMMON/logs/bus.log 2>&1 &
-mycroft-enclosure-client >> /$SNAP_USER_COMMON/logs/enclosure.log 2>&1 &
-mycroft-audio >> /$SNAP_USER_COMMON/logs/audio.log 2>&1 &
-mycroft-speech-client >> /$SNAP_USER_COMMON/logs/voice.log 2>&1 &
-mycroft-skills >> /$SNAP_USER_COMMON/logs/skills.log 2>&1 &
+snapcraft-preload mycroft-messagebus >> /$SNAP_USER_COMMON/logs/bus.log 2>&1 &
+snapcraft-preload mycroft-enclosure-client >> /$SNAP_USER_COMMON/logs/enclosure.log 2>&1 &
+snapcraft-preload mycroft-audio >> /$SNAP_USER_COMMON/logs/audio.log 2>&1 &
+snapcraft-preload mycroft-speech-client >> /$SNAP_USER_COMMON/logs/voice.log 2>&1 &
+snapcraft-preload mycroft-skills >> /$SNAP_USER_COMMON/logs/skills.log 2>&1 &
 
 mycroft-cli-client
 

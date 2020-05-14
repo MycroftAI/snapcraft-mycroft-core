@@ -30,7 +30,7 @@ apps:
     - wayland
     - x11
 base: core18
-confinement: devmode
+confinement: strict
 description: 'Mycroft is a free and open-source intelligent personal assistant and
   knowledge
 
@@ -59,6 +59,8 @@ layout:
     bind: $SNAP_COMMON/vartmp
   /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib:
     bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
+  /opt/mycroft/skills:
+    bind: $SNAP_COMMON/mycroft-data/skills
 
 name: mycroft
 parts:
