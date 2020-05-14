@@ -141,7 +141,7 @@ parts:
 
       '
     override-pull: "cat  > mycroft.conf <<EOF\n{\n    \"enclosure\": {\n        \"\
-      update\": \"false\"\n    },\n    \"data_dir\": \"~/snap/mycroft/common/mycroft-data\"\
+      update\": \"false\"\n    },\n    \"data_dir\": \"~/../common/mycroft-data\"\
       ,\n    \"log_dir\": \"~/../common/logs\"\n}\nEOF\n"
     plugin: nil
     stage-packages:
