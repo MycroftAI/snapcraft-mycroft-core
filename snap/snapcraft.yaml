@@ -59,6 +59,7 @@ layout:
     bind: $SNAP_COMMON/vartmp
   /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib:
     bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
+
 name: mycroft
 parts:
   alsa-mixin:
@@ -141,7 +142,7 @@ parts:
       '
     override-pull: "cat  > mycroft.conf <<EOF\n{\n    \"enclosure\": {\n        \"\
       update\": \"false\"\n    },\n    \"data_dir\": \"~/snap/mycroft/common/mycroft-data\"\
-      ,\n    \"log_dir\": \"~/snap/mycroft/common/logs\"\n}\nEOF\n"
+      ,\n    \"log_dir\": \"~/../common/logs\"\n}\nEOF\n"
     plugin: nil
     stage-packages:
     - libfann-dev
