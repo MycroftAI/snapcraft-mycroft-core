@@ -80,7 +80,7 @@ mycroft-cli-client
 
 echo "Stopping all processes..."
 killall mycroft-skills
-killall mycroft-encolosure-client
+killall mycroft-enclosure-client
 killall mycroft-speech-client
 killall mycroft-audio
 echo "Stopped"
