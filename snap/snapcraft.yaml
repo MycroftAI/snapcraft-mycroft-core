@@ -232,8 +232,8 @@ parts:
       - gcc-multilib
       - g++-multilib
     plugin: cmake
-    source: https://github.com/diddledan/snapcraft-preload.git
-    source-branch: semaphore-support
+    source: https://github.com/forslund/snapcraft-preload.git
+    source-branch: no-as-needed
     stage-packages:
     - try:
       - lib32stdc++6
