@@ -142,7 +142,8 @@ parts:
       '
     override-pull: "cat  > mycroft.conf <<EOF\n{\n    \"enclosure\": {\n        \"\
       update\": \"false\"\n    },\n    \"data_dir\": \"~/../common/mycroft-data\"\
-      ,\n    \"log_dir\": \"~/../common/logs\"\n}\nEOF\n"
+      ,\n    \"log_dir\": \"~/../common/logs\"\
+      ,\n    \"play_ogg_cmdline\": \"vlc --intf dummy --play-and-exit %1\"}\nEOF\n"
     plugin: nil
     stage-packages:
     - libfann-dev
