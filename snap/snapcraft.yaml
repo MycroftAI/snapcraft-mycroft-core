@@ -149,6 +149,16 @@ parts:
     plugin: nil
     stage-packages:
     - libfann-dev
+  precise:
+    plugin: nil
+    build-packages:
+      - curl
+    override-pull: |
+      curl -LOJ $(curl https://raw.githubusercontent.com/MycroftAI/precise-data/dist/x86_64/latest)
+      curl -OJ https://raw.githubusercontent.com/MycroftAI/precise-data/models/hey-mycroft.tar.gz
+    override-build: |
+      install -m644 -D -t $SNAPCRAFT_PART_INSTALL/precise precise-engine_*.tar.gz
+      install -m644 -D -t $SNAPCRAFT_PART_INSTALL/precise hey-mycroft.tar.gz
   mycroft-deps:
     after:
     - mimic

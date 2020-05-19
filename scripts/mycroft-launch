@@ -19,6 +19,19 @@ if [ ! -d "$SNAP_USER_COMMON/mycroft-core" ]; then
     fi
 fi
 
+# Check if Precise Engine and model already exist, if not get from latest install.
+if [ ! -d "$SNAP_USER_DATA/.mycroft/precise" ]; then
+    mkdir -p "$SNAP_USER_DATA/.mycroft/precise"
+    if [ ! -d "$SNAP_USER_DATA/.mycroft/precise/precise-engine" ]; then
+        # copy tarball, otherwise Mycroft downloads a fresh copy
+        cp ${SNAP}/precise/precise-engine_*.tar.gz "$SNAP_USER_DATA/.mycroft/precise/"
+        tar -zxf ${SNAP}/precise/precise-engine_*.tar.gz -C "$SNAP_USER_DATA/.mycroft/precise"
+    fi
+    if [ ! -f "$SNAP_USER_DATA/.mycroft/precise/hey-mycroft.pb" ]; then
+        tar -zxf "$SNAP/precise/hey-mycroft.tar.gz" -C "$SNAP_USER_DATA/.mycroft/precise/"
+    fi
+fi
+
 if [ $needs_update = true ]; then
     cd "$SNAP_USER_COMMON/mycroft-core"
 
