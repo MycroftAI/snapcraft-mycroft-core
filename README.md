@@ -1,16 +1,16 @@
-<h1 align="center">
-  <img src="https://avatars1.githubusercontent.com/u/29598503?v=3&s=256" alt="Project">
-  <br />
+<h1>
+  <img src="https://avatars1.githubusercontent.com/u/29598503?v=3&s=32" alt="Project"> 
   Mycroft Snap
 </h1>
-
-<p align="center">This is the snap for Mycroft AI, the world’s first open source voice assistant. It works on Ubuntu, Fedora, Debian, and other major Linux distributions.</p>
-
-<p align="center">
+<p>
 <a href="https://snapcraft.io/mycroft">
 <img alt="mycroft" src="https://snapcraft.io/mycroft/badge.svg" />
 </a>
 </p>
+
+<p>This is the snap for Mycroft AI, the world’s first open source voice assistant. It works on Ubuntu, Fedora, Debian, and other major Linux distributions.</p>
+
+
 
 ## Install
 
