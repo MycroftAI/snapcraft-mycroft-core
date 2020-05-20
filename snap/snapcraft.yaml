@@ -112,10 +112,15 @@ parts:
 
       rsync -a --exclude .git ./ $SNAPCRAFT_PART_INSTALL/mycroft-source/
 
-      '
-    override-pull: 'snapcraftctl pull
+      # Remove the mycroft-core folder
 
-      git checkout "$(git describe --tags --abbrev=0 --match release/v*)"
+      rm -rf /root/project/mycroft-core
+      '
+    override-pull: '# Try to fetch mycroft-core
+
+    git clone https://github.com/mycroftai/mycroft-core /root/project/mycroft-core 2> /dev/null || true
+
+      snapcraftctl pull
 
       snapcraftctl set-version "$(git describe --tags | sed -e ''s|release/v||'')"
 
@@ -134,8 +139,8 @@ parts:
 
       '
     plugin: nil
-    source: https://github.com/MycroftAI/mycroft-core.git
-    source-type: git
+    source: ./mycroft-core
+    source-type: local
     stage-packages: []
   mycroft-conf:
     build-packages: []
