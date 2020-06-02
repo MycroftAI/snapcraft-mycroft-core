@@ -2,7 +2,7 @@
 Type=Application
 Encoding=UTF-8
 Name=Mycroft
-Comment=Mycroft: your AI personal assistant
+Comment=Mycroft AI voice assistant.
 Exec=mycroft
 Icon=/usr/share/icons/mycroft.png
 Categories=Utilities;
