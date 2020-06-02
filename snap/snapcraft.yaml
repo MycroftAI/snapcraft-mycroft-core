@@ -49,7 +49,7 @@ description: 'Mycroft is a free and open-source intelligent personal assistant a
   the `mycroft.msm` command to list, install, and remove skills.
 
   '
-grade: devel
+grade: stable
 layout:
   /etc/mycroft/mycroft.conf:
     bind-file: $SNAP/etc/mycroft/mycroft.conf
