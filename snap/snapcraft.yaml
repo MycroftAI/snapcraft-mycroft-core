@@ -102,6 +102,7 @@ parts:
     source-depth: 1
     source-type: git
     stage-packages:
+    - libasound2
     - libpcre2-8-0
   mycroft:
     after:
