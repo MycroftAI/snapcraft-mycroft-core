@@ -34,6 +34,12 @@ snapcraft {
             bind: "$SNAP_COMMON/vartmp",
         },
     },
+    architecture: [
+        { "build-on": "i386" },
+        { "build-on": "amd64" },
+        { "build-on": "armhf" },
+        { "build-on": "arm64" },
+    ],
     plugs: plugs,
     apps: apps,
     parts: parts,
