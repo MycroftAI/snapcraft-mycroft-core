@@ -4,6 +4,10 @@
 #export GIT_EXEC_PATH="$SNAP/usr/lib/git-core/"
 needs_update=true
 
+# yad_or_cat is a helper function to failover to cat when yad fails.
+# Yad can fail if you're running on a headless machine.
+yad_or_cat(){ yad "$@" || cat; }
+
 VENV_FOLDER="$SNAP_USER_COMMON/venv"
 
 . "$SNAP_USER_DATA/.mycroft_revision" 2>/dev/null || true
@@ -39,7 +43,7 @@ if [ $needs_update = true ]; then
 
     rsync -rv --delete "$SNAP/mycroft-source/" \
         "$SNAP_USER_COMMON/mycroft-core/" | \
-        yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" \
+        yad_or_cat --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" \
         --title="Mycroft" --text="$ACTION mycroft" --width=400 --center \
         --no-buttons --auto-close --on-top --no-escape
 
@@ -52,12 +56,12 @@ if [ $needs_update = true ]; then
     stdbuf -oL tr '\r' '\n' | \
     sed -u -E \
         's/^ *([0-9][0-9]*).*( [0-9].*$)/\1\n#Downloading Python PIP(\2)/' | \
-    yad --progress --image="$SNAP/usr/share/icons/mycroft.png" \
+    yad_or_cat --progress --image="$SNAP/usr/share/icons/mycroft.png" \
         --title="Mycroft" --width=400 --center --no-buttons --auto-close \
         --on-top --no-escape
 
     "$VENV_FOLDER/bin/python3" "$TMPDIR/get-pip.py" | \
-    yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" \
+    yad_or_cat --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" \
         --title="Mycroft" --text="Installing Python PIP" --width=400 --center \
         --no-buttons --auto-close --on-top --no-escape
 
@@ -68,7 +72,7 @@ if [ $needs_update = true ]; then
 
     pip install  "$SNAP_USER_COMMON/mycroft-core/" | \
     stdbuf -oL tr '\r' '\n' | \
-    yad --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --text="Installing Mycroft dependencies" --width=400 --center --no-buttons --auto-close --on-top --no-escape
+    yad_or_cat --progress --pulsate --image="$SNAP/usr/share/icons/mycroft.png" --title="Mycroft" --text="Installing Mycroft dependencies" --width=400 --center --no-buttons --auto-close --on-top --no-escape
 
     echo "$SNAP_REVISION" > "$SNAP_USER_COMMON/.revision"
 else
